@@ -7,7 +7,19 @@ namespace Moths.Editor.Cmd
 {
     internal static class FolderContextMenu
     {
-        [MenuItem("Assets/Open in Command-line", false)]
+        [MenuItem("Assets/Moths/Open Project in Command-line", false, priority = 1000)]
+        private static void OpenProjectCmd()
+        {
+            var path = Application.dataPath.Substring(0, Application.dataPath.Length - "Assets/".Length);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/K cd /d \"{path}\"",
+                UseShellExecute = true
+            });
+        }
+
+        [MenuItem("Assets/Moths/Open in Command-line", false, priority = 1001)]
         private static void OpenCmd()
         {
             var path = GetSelectedFolderPath();
