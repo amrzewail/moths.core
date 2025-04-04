@@ -1,0 +1,22 @@
+{
+  "name": "com.moths.core",
+  "displayName": "Moths Core",
+  "version": "1.0.0",
+  "unity": "2022.3",
+  "description": "The core package for the Moths framework, containing essential utilities and classes used across Moths packages.",
+  "keywords": [
+    "moths",
+    "core",
+    "utilities"
+  ],
+  "author": {
+    "name": "Amr Zewail",
+    "email": "amrzewail@hotmail.com",
+    "url": "https://github.com/amrzewail"
+  },
+  "unityRelease": "2022.3",
+  "changelog": {
+    "1.0.0": "- Initial release"
+  },
+  "license": "MIT"
+}
