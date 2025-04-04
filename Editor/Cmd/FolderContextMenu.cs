@@ -23,6 +23,7 @@ namespace Moths.Editor.Cmd
         {
             var obj = Selection.activeObject;
             var path = AssetDatabase.GetAssetPath(obj);
+            path = Path.GetDirectoryName(path);
             if (!AssetDatabase.IsValidFolder(path))
             {
                 path = "";
@@ -38,7 +39,7 @@ namespace Moths.Editor.Cmd
         private static bool ValidateOpenCmd()
         {
             var obj = Selection.activeObject;
-            return obj != null && AssetDatabase.IsValidFolder(AssetDatabase.GetAssetPath(obj));
+            return obj != null;
         }
     }
 }
