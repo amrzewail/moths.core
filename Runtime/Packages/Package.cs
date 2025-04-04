@@ -15,6 +15,7 @@ namespace Moths.Internal.Packages
         public Author author;
         public Dependency[] dependencies;
         public Change[] changelog;
+        public Sample[] samples;
         public License license;
 
     }
@@ -71,6 +72,14 @@ namespace Moths.Internal.Packages
         {
             return $"\"{version}\": \"{description}\"";
         }
+    }
+
+    [System.Serializable]
+    public struct Sample
+    {
+        public string displayName;
+        public string description;
+        public string path;
     }
 
     public enum License
@@ -153,6 +162,19 @@ namespace Moths.Internal.Packages
                 else builder.AppendLine("");
             }
             builder.AppendLine($"\t}},");
+
+            builder.AppendLine($"\t\"samples\": [");
+            for (int i = 0; i < _package.samples.Length; i++)
+            {
+                builder.AppendLine("\t\t{");
+                builder.AppendLine($"\t\t\t\"displayName\": \"{_package.samples[i].displayName}\",");
+                builder.AppendLine($"\t\t\t\"description\": \"{_package.samples[i].description}\",");
+                builder.AppendLine($"\t\t\t\"path\": \"{_package.samples[i].path}\"");
+                builder.Append("\t\t}");
+                if (i < _package.samples.Length - 1) builder.AppendLine(",");
+                else builder.AppendLine("");
+            }
+            builder.AppendLine($"\t],");
 
             builder.AppendLine($"\t\"license\": \"{_package.license}\"");
 
