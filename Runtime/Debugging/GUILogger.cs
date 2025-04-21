@@ -77,7 +77,7 @@ namespace Moths.Debugging {
         {
             if (_style == null)
             {
-                _style = GUI.skin.label;
+                _style = new GUIStyle(GUI.skin.label);
                 _style.alignment = TextAnchor.UpperRight;
                 _style.fontSize = 16;
                 _style.fontStyle = FontStyle.Normal;
