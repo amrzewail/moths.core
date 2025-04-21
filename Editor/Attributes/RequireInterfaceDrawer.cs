@@ -1,12 +1,13 @@
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
+using Moths.Attributes;
 /// <summary>
 /// Drawer for the RequireInterface attribute.
 /// </summary>
 /// 
 
-namespace Moths.Attributes.Editor
+namespace Moths.Editor.Attributes
 {
 
     [CustomPropertyDrawer(typeof(RequireInterfaceAttribute))]

@@ -12,7 +12,10 @@ namespace Moths.Fields
     }
 
     public interface IGenericReference { }
-    public class GenericReference : IGenericReference { }
+    public class GenericReference : IGenericReference 
+    {
+        public virtual void OnValidate() { }
+    }
 
     public interface IGenericReference<out TValue, out TField, out TMonoBehaviour>
     {
@@ -31,6 +34,7 @@ namespace Moths.Fields
 
         public Type ValueType => valueType;
 
+
         public static implicit operator TValue(GenericReference<TValue, TField, TMonoBehaviour> p)
         {
             return p.Value;
@@ -38,12 +42,14 @@ namespace Moths.Fields
 
         public static bool operator ==(GenericReference<TValue, TField, TMonoBehaviour> reference, TValue value)
         {
+            if (reference == null) return value == null;
+            if (value == null) return reference.Value == null;
             return reference.Value.Equals(value);
         }
 
         public static bool operator !=(GenericReference<TValue, TField, TMonoBehaviour> reference, TValue value)
         {
-            return !reference.Value.Equals(value);
+            return !(reference == value);
         }
 
         public override bool Equals(object obj)

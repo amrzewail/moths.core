@@ -9,12 +9,19 @@ namespace Moths.Fields
 {
     public interface IGenericField { }
 
+    public abstract class GenericField : ScriptableObject 
+    {
+        public class HideValueAttribute : Attribute { }
+        public class HideStacktraceAttribute : Attribute { }
+
+    }
+
     public interface IGenericField<out T> : IGenericField
     {
         T GetValue();
     }
 
-    public class GenericField<T> : ScriptableObject, IGenericField<T>
+    public class GenericField<T> : GenericField, IGenericField<T>
     {
         [SerializeField] protected T value;
 
@@ -26,6 +33,7 @@ namespace Moths.Fields
 #if ODIN_INSPECTOR
     [Sirenix.OdinInspector.ReadOnly]
 #endif //ODIN_INSPECTOR
+        [ReadOnly]
         [PersistScriptableObjectField]
         private List<string> _stacktraces;
 #endif //UNITY_EDITOR
@@ -36,7 +44,7 @@ namespace Moths.Fields
         {
             get
             {
-                return value;
+                return GetValue();
             }
             set
             {
@@ -50,7 +58,7 @@ namespace Moths.Fields
             }
         }
 
-        public T GetValue() => Value;
+        public virtual T GetValue() => value;
 
         protected virtual void OnValidate()
         {

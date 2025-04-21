@@ -1,9 +1,59 @@
 using UnityEditor;
 using UnityEngine;
+using System.Reflection;
 using Moths.Fields;
 
 namespace Moths.Editor.Fields
 {
+    [CustomEditor(typeof(GenericField), true)]
+    public class GenericFieldDrawer : UnityEditor.Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            serializedObject.Update();
+
+            SerializedProperty property = serializedObject.GetIterator();
+
+            SerializedProperty stacktracesProperty = null;
+
+            bool hideValue = false;
+            bool hideStacktrace = false;
+
+            foreach(var attr in base.target.GetType().GetCustomAttributes())
+            {
+                if (attr is GenericField.HideValueAttribute) hideValue = true;
+                if (attr is GenericField.HideStacktraceAttribute) hideStacktrace = true;
+            }
+
+            if (property.NextVisible(true))
+            {
+                do
+                {
+                    if (property.propertyPath == "m_Script") continue;
+
+                    if (hideValue && property.name == "value") continue;
+
+                    if (!hideStacktrace && property.name == "_stacktraces")
+                    {
+                        stacktracesProperty = property.Copy();
+                        continue;
+                    }
+                    EditorGUILayout.PropertyField(property, true);
+                }
+                while (property.NextVisible(false));
+            }
+
+            if (stacktracesProperty != null)
+            {
+                EditorGUILayout.Space(10);
+                EditorGUILayout.PropertyField(stacktracesProperty, true);
+            }
+
+            serializedObject.ApplyModifiedProperties();
+        }
+    }
+
+
     [CustomPropertyDrawer(typeof(GenericReference), true)]
     public class GenericPropertyFieldDrawer : PropertyDrawer
     {
@@ -34,8 +84,6 @@ namespace Moths.Editor.Fields
 
             EditorGUI.BeginProperty(position, label, property);
 
-
-
             if (_options == null)
             {
                 _options = new string[3];
@@ -51,7 +99,9 @@ namespace Moths.Editor.Fields
 
             }
 
-            var buttonRect = new Rect(position.x + position.width - 17.5f, position.y, 30, EditorGUIUtility.singleLineHeight);//EditorGUILayout.GetControlRect(false, 20f, GUILayout.MaxWidth(20f));
+            var buttonRect = new Rect(position.x + position.width - 17f, position.y, 30, EditorGUIUtility.singleLineHeight);//EditorGUILayout.GetControlRect(false, 20f, GUILayout.MaxWidth(20f));
+
+            buttonRect.x -= 17f * Mathf.Max(0, Mathf.Sign((property.depth - 1)));
 
             valueType.enumValueIndex = EditorGUI.Popup(buttonRect, valueType.enumValueIndex, _options, _style);
 
@@ -73,6 +123,12 @@ namespace Moths.Editor.Fields
             }
 
             EditorGUI.EndProperty();
+
+
+            GenericReference target = (GenericReference)property.boxedValue;
+            target.OnValidate();
+
+            property.serializedObject.ApplyModifiedProperties();
         }
     }
 }

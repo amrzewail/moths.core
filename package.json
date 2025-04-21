@@ -1,21 +1,25 @@
 {
-  "name": "com.moths.core",
-  "displayName": "Moths Core",
-  "version": "1.0.0",
-  "unity": "2022.3",
-  "description": "The core package for the Moths framework, containing essential utilities and classes used across Moths packages.",
-  "keywords": [
-    "moths",
-    "core",
-    "utilities"
-  ],
-  "author": {
-    "name": "Amr Zewail",
-    "email": "amrzewail@hotmail.com",
-    "url": "https://github.com/amrzewail"
-  },
-  "changelog": {
-    "1.0.0": "- Initial release"
-  },
-  "license": "MIT"
+	"name": "com.moths.core",
+	"displayName": "Moths Core",
+	"version": "1.0.0",
+	"unity": "2022.3",
+	"description": "The core package for the Moths framework, containing essential utilities and classes used across Moths packages.",
+	"author": {
+		"name": "Amr Zewail",
+		"email": "amrzewail@hotmail.com",
+		"url": "https://github.com/amrzewail"
+	},
+	"dependencies": {
+	},
+	"changelog": {
+		"1.0.0": "- Initial release"
+	},
+	"samples": [
+		{
+			"displayName": "Debugging Sample",
+			"description": "",
+			"path": "Samples~/Debugging"
+		}
+	],
+	"license": "MIT"
 }
