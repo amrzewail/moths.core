@@ -7,7 +7,7 @@ namespace Moths.Debugging
     {
         public bool IsLoggable => enabled;
 
-        public string Title => this.name;
+        public virtual string Title => this.name;
 
         private StringBuilder _builder = new StringBuilder();
 
