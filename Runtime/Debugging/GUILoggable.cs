@@ -5,7 +5,7 @@ namespace Moths.Debugging
 {
     public abstract class GUILoggable : MonoBehaviour, ILoggable
     {
-        public bool IsLoggable => enabled;
+        public bool IsLoggable => enabled && GetIsLoggable();
 
         public virtual string Title => this.name;
 
@@ -27,6 +27,8 @@ namespace Moths.Debugging
             OnLog(_builder);
             return _builder;
         }
+		
+		protected virtual bool GetIsLoggable() => true;
 
         protected abstract void OnLog(StringBuilder builder);
     }
