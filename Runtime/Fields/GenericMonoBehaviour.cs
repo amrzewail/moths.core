@@ -8,14 +8,14 @@ namespace Moths.Fields
 {
     public interface IGenericMonoBehaviour { }
 
-    public interface IGenericMonoBehaviour<out T> : IGenericMonoBehaviour
+    public interface IGenericMonoBehaviour<T> : IGenericMonoBehaviour
     {
-        T GetValue();
+        T Value { get; set; }
     }
 
-    public class GenericMonoBehaviour<T> : MonoBehaviour, IGenericMonoBehaviour<T>
+    public class GenericMonoBehaviour<TValue> : MonoBehaviour, IGenericMonoBehaviour<TValue> 
     {
-        [SerializeField] protected T value;
+        [SerializeField] protected GenericReference<TValue, GenericField<TValue>, GenericMonoBehaviour<TValue>> value;
 
 #if UNITY_EDITOR
         [Space]
@@ -31,11 +31,12 @@ namespace Moths.Fields
 
         public event Action Changed;
 
-        public T Value
+        public TValue Value
         {
             get
             {
-                return value;
+                if (value == null) return default;
+                return value.Value;
             }
             set
             {
@@ -44,12 +45,10 @@ namespace Moths.Fields
                 _stacktraces.Insert(0, stackTrace);
                 if (_stacktraces.Count > 100) _stacktraces.RemoveAt(100);
 #endif
-                this.value = value;
+                this.value.Value = value;
                 Changed?.Invoke();
             }
         }
-
-        public T GetValue() => Value;
 
         protected virtual void OnValidate()
         {
@@ -59,6 +58,6 @@ namespace Moths.Fields
         public override string ToString() => value.ToString();
 
 
-        public static implicit operator T(GenericMonoBehaviour<T> field) => field.Value;
+        public static implicit operator TValue(GenericMonoBehaviour<TValue> monoBehaviour) => monoBehaviour.Value;
     }
 }

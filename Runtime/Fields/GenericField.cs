@@ -18,7 +18,7 @@ namespace Moths.Fields
 
     public interface IGenericField<out T> : IGenericField
     {
-        T GetValue();
+        T Value { get; }
     }
 
     public class GenericField<T> : GenericField, IGenericField<T>
@@ -40,11 +40,11 @@ namespace Moths.Fields
 
         public event Action Changed;
 
-        public T Value
+        public virtual T Value
         {
             get
             {
-                return GetValue();
+                return value;
             }
             set
             {
@@ -57,8 +57,6 @@ namespace Moths.Fields
                 Changed?.Invoke();
             }
         }
-
-        public virtual T GetValue() => value;
 
         protected virtual void OnValidate()
         {

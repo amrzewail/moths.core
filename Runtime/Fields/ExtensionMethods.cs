@@ -13,14 +13,14 @@ namespace Moths.Fields
                 for (int i = 0; i < list.Count; i++)
                 {
                     var element = list[i] as IGenericReference<TValue, IGenericField<TValue>, IGenericMonoBehaviour<TValue>>;
-                    if (element.GetValue().Equals(val)) return true;
+                    if (element.Value.Equals(val)) return true;
                 }
             }
             else
             {
                 foreach (var element in enumerable)
                 {
-                    if (element.GetValue().Equals(val)) return true;
+                    if (element.Value.Equals(val)) return true;
                 }
             }
             return false;

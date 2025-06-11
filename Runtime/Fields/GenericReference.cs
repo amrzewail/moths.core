@@ -17,9 +17,13 @@ namespace Moths.Fields
         public virtual void OnValidate() { }
     }
 
-    public interface IGenericReference<out TValue, out TField, out TMonoBehaviour>
+    public interface IGenericReference<TValue>
     {
-        TValue GetValue();
+        TValue Value { get; set; }
+    }
+
+    public interface IGenericReference<TValue, out TField, out TMonoBehaviour> : IGenericReference<TValue>
+    {
     };
 
     [System.Serializable]
@@ -99,7 +103,5 @@ namespace Moths.Fields
                 return null;
             }
         }
-
-        public TValue GetValue() => Value;
     }
 }
