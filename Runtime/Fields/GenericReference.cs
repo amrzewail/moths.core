@@ -36,7 +36,7 @@ namespace Moths.Fields
         [SerializeField] TMonoBehaviour monoBehaviour;
         [SerializeField] Type valueType;
 
-        public Type ValueType { get => valueType; set => valueType = value; }
+        public Type ValueType { get => valueType; }
 
 
         public static implicit operator TValue(GenericReference<TValue, TField, TMonoBehaviour> p)
@@ -95,12 +95,20 @@ namespace Moths.Fields
             }
         }
 
+        /// <summary>
+        /// Auto sets ValueType to Field and assigns the value to field property.
+        /// </summary>
         public TField Field
         {
             get
             {
                 if (valueType == Type.Field) return field;
                 return null;
+            }
+            set
+            {
+                valueType = Type.Field;
+                field = value;
             }
         }
     }
