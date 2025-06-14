@@ -18,7 +18,7 @@ namespace Moths.Utility
 
         public static void AddSystem<TSystem, TParent>(PlayerLoopSystem.UpdateFunction updateFunction)
         {
-            var defaultSystems = PlayerLoop.GetDefaultPlayerLoop();
+            var defaultSystems = PlayerLoop.GetCurrentPlayerLoop();
             var updateSystem = FindSubSystem(defaultSystems, typeof(TParent));
 
             if (updateSystem.subSystemList == null) updateSystem.subSystemList = new PlayerLoopSystem[0];

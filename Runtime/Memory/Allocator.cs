@@ -7,7 +7,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
-namespace Memory
+namespace Moths.Memory
 {
     /// <summary>
     /// Memory allocator that keeps track of allocated pointers to prevent memory leaks<br></br>
@@ -17,11 +17,13 @@ namespace Memory
     /// <typeparam name="T"></typeparam>
     public unsafe struct Allocator<T> : IDisposable where T : unmanaged
     {
+        private bool _isInitialized;
         private NativeParallelHashMap<int, Ptr<T>> _allocations;
 
-        public void Initialize()
+        public void Initialize(int capacity = 128)
         {
-            _allocations = new NativeParallelHashMap<int, Ptr<T>>(100, Allocator.Persistent);
+            _allocations = new NativeParallelHashMap<int, Ptr<T>>(capacity, Allocator.Persistent);
+            _isInitialized = true;
         }
 
         /// <summary>
@@ -29,13 +31,15 @@ namespace Memory
         /// </summary>
         public void FreeAll()
         {
-            foreach(var ptr in _allocations)
+            if (_isInitialized)
             {
-                UnsafeUtility.FreeTracked(ptr.Value, Allocator.Persistent);
-
-                Debug.Log($"[Allocator<{typeof(T).Name}>] Free allocated");
+                foreach (var ptr in _allocations)
+                {
+                    UnsafeUtility.FreeTracked(ptr.Value, Allocator.Persistent);
+                    Debug.Log($"[Allocator<{typeof(T).Name}>] Free allocated");
+                }
+                _allocations.Clear();
             }
-            _allocations.Clear();
         }
 
         /// <summary>
@@ -47,9 +51,8 @@ namespace Memory
 #if ENABLE_LOGS
             Debug.Log($"[Allocator<{typeof(T).Name}>] Free allocated");
 #endif
-
             UnsafeUtility.FreeTracked(ptr, Allocator.Persistent);
-            _allocations.Remove(ptr);
+            if (_isInitialized) _allocations.Remove(ptr);
         }
 
 
@@ -61,7 +64,7 @@ namespace Memory
         {
             T* m = (T*)UnsafeUtility.MallocTracked(UnsafeUtility.SizeOf<T>(), UnsafeUtility.AlignOf<T>(), Allocator.Persistent, 0);
             Ptr<T> ptr = new Ptr<T>(m);
-            _allocations.AsParallelWriter().TryAdd(ptr, ptr);
+            if (_isInitialized) _allocations.AsParallelWriter().TryAdd(ptr, ptr);
 #if ENABLE_LOGS
             Debug.Log($"[Allocator<{typeof(T).Name}>] Allocated new");
 #endif
@@ -75,8 +78,12 @@ namespace Memory
         /// <returns></returns>
         public bool IsAllocated(Ptr<T> ptr)
         {
-            if (!_allocations.IsCreated) return false;
-            return _allocations.ContainsKey(ptr);
+            if (_isInitialized)
+            {
+                if (!_allocations.IsCreated) return false;
+                return _allocations.ContainsKey(ptr);
+            }
+            return false;
         }
 
 
@@ -86,7 +93,10 @@ namespace Memory
         public void Dispose()
         {
             FreeAll();
-            _allocations.Dispose();
+            if (_isInitialized)
+            {
+                _allocations.Dispose();
+            }
         }
     }
 }
