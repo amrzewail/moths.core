@@ -71,52 +71,21 @@ namespace Moths.Core.Editor
 
                 if (cachedObjs == null || cachedObjs.Count == 0) return;
 
-                //List<FieldInfo> ignoredFields = new List<FieldInfo>();
-                //FieldsContainer ignoredFieldsContainer;
-                //ignoredFieldsContainer.fields = new List<object>();
-                //string ignoredFieldsJson = "";
-
                 foreach (var obj in cachedObjs)
                 {
                     var json = obj.json;
+
                     var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(AssetDatabase.GUIDToAssetPath(obj.assetGuid));
+
                     if (!asset) continue;
 
-                    //Type type = Type.GetType(obj.type);
-                    //ignoredFields.Clear();
-                    //ignoredFieldsContainer.fields.Clear();
+                    string assetJson = EditorJsonUtility.ToJson(asset);
 
-                    //BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic |
-                    //                            BindingFlags.Static | BindingFlags.Instance |
-                    //                            BindingFlags.DeclaredOnly;
-
-                    //while (type != null && type.FullName != "UnityEngine.ScriptableObject")
-                    //{
-                    //    ignoredFields.AddRange(type.GetFields(bindingFlags).Where(f => Attribute.IsDefined(f, typeof(IgnorePreserveSOField))));
-                    //    type = type.BaseType;
-                    //}
-
-                    //foreach(var ignoredField in ignoredFields)
-                    //{
-                    //    ignoredFieldsContainer.fields.Add(ignoredField.GetValue(asset));
-                    //}
-
-                    //if (ignoredFieldsContainer.fields.Count > 0) ignoredFieldsJson = JsonUtility.ToJson(ignoredFieldsContainer);
-
-                    EditorJsonUtility.FromJsonOverwrite(json, asset);
-
-                    //if (ignoredFieldsContainer.fields.Count > 0)
-                    //{
-                    //    ignoredFieldsContainer = JsonUtility.FromJson<FieldsContainer>(ignoredFieldsJson);
-
-                    //    foreach (var ignoredField in ignoredFields)
-                    //    {
-                    //        //ignoredField.SetValue(asset, ignoredValueMap[ignoredField.Name]);
-                    //    }
-                    //}
-
-
-                    EditorUtility.SetDirty(asset);
+                    if (assetJson != json)
+                    {
+                        EditorJsonUtility.FromJsonOverwrite(json, asset);
+                        EditorUtility.SetDirty(asset);
+                    }
                 }
 
                 AssetDatabase.Refresh();
