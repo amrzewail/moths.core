@@ -258,17 +258,20 @@ namespace Moths.ScriptableObjects
                 // Add sub-assets as children
                 foreach (var so in subAssets)
                 {
-                    var subItem = new SOItem
+                    if (so is ScriptableObject)
                     {
-                        id = ++id,
-                        depth = parts.Length, // one deeper than parent
-                        displayName = so.name,
-                        guid = guid,          // same file GUID
-                        isFavourite = favourites.Contains(guid),
-                        target = (ScriptableObject)so,
-                        isSubAsset = true,
-                    };
-                    parentItem.AddChild(subItem);
+                        var subItem = new SOItem
+                        {
+                            id = ++id,
+                            depth = parts.Length, // one deeper than parent
+                            displayName = so.name,
+                            guid = guid,          // same file GUID
+                            isFavourite = favourites.Contains(guid),
+                            target = (ScriptableObject)so,
+                            isSubAsset = true,
+                        };
+                        parentItem.AddChild(subItem);
+                    }
                 }
             }
 
