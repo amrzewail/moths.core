@@ -23,6 +23,9 @@ namespace Moths.ScriptableObjects
         SOAssetTreeView treeView;
         Vector2 favouritesScroll;
         SearchField searchField;
+
+        string rootPath;
+
         string searchString = "";
 
         int selectedTab = 0; // 0 = All, 1 = Favourites
@@ -33,7 +36,10 @@ namespace Moths.ScriptableObjects
                 treeViewState = new TreeViewState();
 
             treeView = new SOAssetTreeView(treeViewState, SOEditorUtility.Types.ToArray());
+            treeView.searchString = "";
             treeView.Reload();
+
+            rootPath = EditorPrefs.GetString("Moths/ScriptableObjectBrowser/rootPath");
 
             searchField = new SearchField();
             searchField.downOrUpArrowKeyPressed += treeView.SetFocusAndEnsureSelectedItem;
@@ -51,6 +57,13 @@ namespace Moths.ScriptableObjects
             {
                 DrawFavouritesTab();
             }
+
+            string selectedAsset = "";
+            if (treeView != null && treeView.lastSelected?.target)
+            {
+                selectedAsset = treeView.lastSelected.assetPath.Substring("Assets/".Length);
+            }
+            GUILayout.Label(selectedAsset);
         }
 
         void DrawAllTab()
@@ -60,12 +73,20 @@ namespace Moths.ScriptableObjects
             if (GUILayout.Button("Refresh", EditorStyles.toolbarButton))
                 treeView.Reload();
 
+            
+            this.rootPath = GUILayout.TextField(this.rootPath, EditorStyles.toolbarTextField, GUILayout.Width(position.width * 0.4f));
+            if (this.rootPath != treeView.rootPath)
+            {
+                EditorPrefs.SetString("Moths/ScriptableObjectBrowser/rootPath", treeView.rootPath = rootPath);
+                treeView.Reload();
+            }
+
             GUILayout.FlexibleSpace();
 
             searchString = searchField.OnToolbarGUI(searchString);
-            if (treeView.searchString != searchString)
+            if (treeView.searchFilter != searchString)
             {
-                treeView.searchString = searchString;
+                treeView.searchFilter = searchString;
                 treeView.Reload();
             }
 
@@ -178,7 +199,10 @@ namespace Moths.ScriptableObjects
     {
         HashSet<string> favourites;
         TypeEntry[] types;
-        SOItem lastSelected;
+
+        public SOItem lastSelected;
+        public string rootPath = "";
+        public string searchFilter;
 
         public SOAssetTreeView(TreeViewState state, TypeEntry[] types) : base(state)
         {
@@ -188,6 +212,9 @@ namespace Moths.ScriptableObjects
 
         protected override TreeViewItem BuildRoot()
         {
+            string rootPath = "Assets/" + this.rootPath;
+            rootPath = rootPath.TrimEnd('/') + '/';
+
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
 
             string[] guids = AssetDatabase.FindAssets("t:ScriptableObject", new[] { "Assets" });
@@ -198,15 +225,16 @@ namespace Moths.ScriptableObjects
             foreach (var guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
-                if (!path.StartsWith("Assets/")) continue;
 
-                path = path.Substring("Assets/".Length);
+                if (!path.StartsWith(rootPath)) continue;
+
+                path = path.Substring(rootPath.Length);
 
                 string assetName = Path.GetFileNameWithoutExtension(path);
 
-                // 🔍 Apply search filter
-                if (!string.IsNullOrEmpty(searchString) &&
-                    !assetName.ToLower().Contains(searchString.ToLower()))
+                //Apply search filter
+                if (!string.IsNullOrEmpty(searchFilter) &&
+                    !path.ToLower().Contains(searchFilter.ToLower()))
                     continue;
 
                 string[] parts = path.Split('/');
@@ -231,19 +259,19 @@ namespace Moths.ScriptableObjects
                     parent = folder;
                 }
 
-                Object[] objs = AssetDatabase.LoadAllAssetsAtPath("Assets/" + path);
-                ScriptableObject mainSO = AssetDatabase.LoadMainAssetAtPath("Assets/" + path) as ScriptableObject;
-                Object[] subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath("Assets/" + path);
+                Object[] objs = AssetDatabase.LoadAllAssetsAtPath(rootPath + path);
+                ScriptableObject mainSO = AssetDatabase.LoadMainAssetAtPath(rootPath + path) as ScriptableObject;
+                Object[] subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(rootPath + path);
 
                 // Skip files without any SOs
                 if (mainSO == null) continue;
 
                 // Create parent item (the asset itself)
-                var parentItem = new SOItem
+                var mainItem = new SOItem
                 {
                     id = ++id,
                     depth = parts.Length - 1,
-                    displayName = Path.GetFileNameWithoutExtension(path),
+                    displayName = mainSO.name,
                     guid = guid,
                     isFavourite = favourites.Contains(guid),
                     target = mainSO
@@ -251,9 +279,9 @@ namespace Moths.ScriptableObjects
 
                 // Attach to folder
                 if (parent != null)
-                    parent.AddChild(parentItem);
+                    parent.AddChild(mainItem);
                 else
-                    root.AddChild(parentItem);
+                    root.AddChild(mainItem);
 
                 // Add sub-assets as children
                 foreach (var so in subAssets)
@@ -270,7 +298,7 @@ namespace Moths.ScriptableObjects
                             target = (ScriptableObject)so,
                             isSubAsset = true,
                         };
-                        parentItem.AddChild(subItem);
+                        mainItem.AddChild(subItem);
                     }
                 }
             }
@@ -449,7 +477,7 @@ namespace Moths.ScriptableObjects
 
         public static HashSet<string> LoadFavourites()
         {
-            var json = EditorPrefs.GetString("SO_Browser_Favourites", "{\"items\":[]}");
+            var json = EditorPrefs.GetString("Moths/ScriptableObjectBrowser/favourites", "{\"items\":[]}");
             return new HashSet<string>(JsonUtility.FromJson<StringArray>(json).items);
         }
 
@@ -458,13 +486,13 @@ namespace Moths.ScriptableObjects
             var favs = LoadFavourites();
             favs.Remove(guid);
             var arr = new StringArray { items = new List<string>(favs).ToArray() };
-            EditorPrefs.SetString("SO_Browser_Favourites", JsonUtility.ToJson(arr));
+            EditorPrefs.SetString("Moths/ScriptableObjectBrowser/favourites", JsonUtility.ToJson(arr));
         }
 
         void SaveFavourites()
         {
             var arr = new StringArray { items = new List<string>(favourites).ToArray() };
-            EditorPrefs.SetString("SO_Browser_Favourites", JsonUtility.ToJson(arr));
+            EditorPrefs.SetString("Moths/ScriptableObjectBrowser/favourites", JsonUtility.ToJson(arr));
         }
 
         [System.Serializable]
@@ -473,10 +501,22 @@ namespace Moths.ScriptableObjects
 
     class SOItem : TreeViewItem
     {
+        private ScriptableObject _target;
+
         public string guid;
         public bool isFavourite;
         public bool isSubAsset;
-        public ScriptableObject target;
+        public ScriptableObject target
+        {
+            get => _target;
+            set
+            {
+                _target = value;
+                assetPath = AssetDatabase.GetAssetPath(value);
+            }
+        }
+
+        public string assetPath;
     }
 
     class FolderItem : TreeViewItem
