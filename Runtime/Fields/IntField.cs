@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Moths.Fields
 {
 
-    [CreateAssetMenu(menuName = "ScriptableObjects/Fields/Int Field")]
+    [CreateAssetMenu(menuName = "Moths/Fields/Int Field")]
     [PreserveScriptableObject]
     public class IntField : GenericField<int> { }
 

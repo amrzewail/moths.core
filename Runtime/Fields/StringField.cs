@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Moths.Fields
 {
-    [CreateAssetMenu(menuName = "ScriptableObjects/Fields/String Field")]
+    [CreateAssetMenu(menuName = "Moths/Fields/String Field")]
     [PreserveScriptableObject]
     public class StringField : GenericField<string>
     {

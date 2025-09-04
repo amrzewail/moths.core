@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Moths.Fields
 {
 
-    [CreateAssetMenu(menuName = "ScriptableObjects/Fields/ULong Field")]
+    [CreateAssetMenu(menuName = "Moths/Fields/ULong Field")]
     [PreserveScriptableObject]
     public class ULongField : GenericField<ulong> { }
 

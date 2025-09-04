@@ -4,7 +4,8 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 
-namespace Moths.Debugging {
+namespace Moths.Debugging 
+{
     public class GUILogger : MonoBehaviour
     {
 
@@ -61,6 +62,7 @@ namespace Moths.Debugging {
         {
             if (_loggables.Contains(loggable)) return;
             _loggables.Add(loggable);
+            _loggables.Sort((l, r) => l.order.CompareTo(r.order));
         }
 
         public static void Unregister(ILoggable loggable)

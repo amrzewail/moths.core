@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Moths.Fields
 {
-    [CreateAssetMenu(menuName = "ScriptableObjects/Fields/Float Field")]
+    [CreateAssetMenu(menuName = "Moths/Fields/Float Field")]
     [PreserveScriptableObject]
     public class FloatField : GenericField<float> { }
 
