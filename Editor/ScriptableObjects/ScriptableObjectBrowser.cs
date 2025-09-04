@@ -100,7 +100,7 @@ namespace Moths.ScriptableObjects
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button(AssetPreview.GetMiniThumbnail(obj), GUILayout.Width(20), GUILayout.Height(20)))
             {
-                Selection.activeObject = obj;
+                AssetDatabase.OpenAsset(obj);
             }
 
             if (GUILayout.Button(obj.name, EditorStyles.label))
@@ -178,7 +178,7 @@ namespace Moths.ScriptableObjects
 
                             if (GUILayout.Button(AssetPreview.GetMiniThumbnail(so), GUILayout.Width(20), GUILayout.Height(20)))
                             {
-                                Selection.activeObject = so;
+                                AssetDatabase.OpenAsset(so);
                             }
 
                             if (GUILayout.Button(so.name, EditorStyles.label))
