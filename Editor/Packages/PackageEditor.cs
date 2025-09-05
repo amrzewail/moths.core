@@ -6,6 +6,7 @@ using UnityEditor.UIElements;
 using Moths.Internal.Packages;
 using System.IO;
 using Moths.Cmd;
+using System.Threading.Tasks;
 
 namespace Moths.Editor.Internal.Packages
 {
@@ -140,10 +141,21 @@ namespace Moths.Editor.Internal.Packages
                 Debug.Log(result);
             };
 
+            var gitStatus = new Label();
+            gitStatus.style.width = Length.Percent(100);
+            gitStatus.style.marginTop = 12;
+
+            var status = Command.Run(serializedObject.targetObject, "git", "status");
+            if (gitStatus != null)
+            {
+                gitStatus.text = status.result;
+            }
+
             root.Add(generateBtn);
 
             root.Add(commitMessage);
             root.Add(commitBtn);
+            root.Add(gitStatus);
 
             return root;
 
