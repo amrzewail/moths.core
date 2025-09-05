@@ -35,7 +35,7 @@ namespace Moths.ScriptableObjects.Browser
 
             foreach (var guid in guids)
             {
-                //if (isFavourites && !favourites.Contains(guid)) continue;
+                if (isFavourites && !_browser.favourites.Contains(guid)) continue;
 
                 string path = AssetDatabase.GUIDToAssetPath(guid);
 

@@ -43,6 +43,8 @@ namespace Moths.ScriptableObjects.Browser
 
         SearchField searchField;
 
+        internal HashSet<string> favourites;
+
         string rootPath;
 
         string searchString = "";
@@ -51,6 +53,8 @@ namespace Moths.ScriptableObjects.Browser
 
         void OnEnable()
         {
+            favourites = LoadFavourites();
+
             var treeViewStateJson = EditorUserSettings.GetConfigValue("Moths/ScriptableObjectBrowser/treeViewState");
             var rootTreeViewStateJson = EditorUserSettings.GetConfigValue("Moths/ScriptableObjectBrowser/rootViewState");
             rootPath = EditorUserSettings.GetConfigValue("Moths/ScriptableObjectBrowser/rootPath");
@@ -58,7 +62,7 @@ namespace Moths.ScriptableObjects.Browser
             treeViewState = string.IsNullOrEmpty(treeViewStateJson) ? new TreeViewState() : JsonUtility.FromJson<TreeViewState>(treeViewStateJson);
             rootViewState = string.IsNullOrEmpty(rootTreeViewStateJson) ? new TreeViewState() : JsonUtility.FromJson<TreeViewState>(rootTreeViewStateJson);
 
-            treeView = new SOAssetTreeView(treeViewState, SOEditorUtility.Types.ToArray());
+            treeView = new SOAssetTreeView(this, treeViewState, SOEditorUtility.Types.ToArray());
             treeView.searchString = "";
 
             rootTreeView = new RootFolderTreeView(this, rootViewState);
@@ -185,6 +189,39 @@ namespace Moths.ScriptableObjects.Browser
             // Root of project assets
             return Path.Combine("Assets", rootPath, string.Join("/", parts)).Replace('\\', '/');
         }
+
+
+
+        private static HashSet<string> LoadFavourites()
+        {
+            var json = EditorUserSettings.GetConfigValue("Moths/ScriptableObjectBrowser/favourites");
+            if (string.IsNullOrEmpty(json)) json = "{\"items\":[]}";
+            return new HashSet<string>(JsonUtility.FromJson<StringArray>(json).items);
+        }
+
+        public static void RemoveFavourite(string guid)
+        {
+            var favs = LoadFavourites();
+            favs.Remove(guid);
+            var arr = new StringArray { items = new List<string>(favs).ToArray() };
+            EditorUserSettings.SetConfigValue("Moths/ScriptableObjectBrowser/favourites", JsonUtility.ToJson(arr));
+        }
+
+        internal void SaveFavourites()
+        {
+            var arr = new StringArray { items = new List<string>(favourites).ToArray() };
+            EditorUserSettings.SetConfigValue("Moths/ScriptableObjectBrowser/favourites", JsonUtility.ToJson(arr));
+        }
+
+        internal void ToggleFavourite(string guid, bool fav)
+        {
+            if (fav) favourites.Add(guid);
+            else favourites.Remove(guid);
+            SaveFavourites();
+        }
+
+        [System.Serializable]
+        class StringArray { public string[] items; }
 
     }
 
