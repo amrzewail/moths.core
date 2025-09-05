@@ -136,6 +136,8 @@ namespace Moths.Editor.Internal.Packages
                 (string result, string error) = Command.Run(serializedObject.targetObject, "git", "add .");
                 (result, error) = Command.Run(serializedObject.targetObject, "git", $"commit -m \"{commitMessage.text}\"");
                 (result, error) = Command.Run(serializedObject.targetObject, "git", $"push");
+                (result, error) = Command.Run(serializedObject.targetObject, "git", $"status");
+                Debug.Log(result);
             };
 
             root.Add(generateBtn);
