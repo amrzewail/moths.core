@@ -257,6 +257,14 @@ namespace Moths.ScriptableObjects.Browser
                     SOEditorUtility.Rename(target, Reload);
                 });
 
+                menu.AddItem(new GUIContent("Reimport"), false, () =>
+                {
+                    var target = soItem.target;
+                    if (target == null) return;
+                    AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(target), ImportAssetOptions.ForceUpdate);
+                    Reload();
+                });
+
                 if (!soItem.isSubAsset)
                 {
                     menu.AddSeparator("");
