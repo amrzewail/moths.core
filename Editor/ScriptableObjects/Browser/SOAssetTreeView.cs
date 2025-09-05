@@ -20,6 +20,8 @@ namespace Moths.ScriptableObjects.Browser
         public string rootPath = "";
         public SearchFilter searchFilter;
 
+        private Dictionary<string, List<SOItem>> IdLookup = new Dictionary<string, List<SOItem>>();
+
         public SOAssetTreeView(ScriptableObjectBrowser browser, TreeViewState state, TypeEntry[] types) : base(state)
         {
             _browser = browser;
@@ -37,6 +39,8 @@ namespace Moths.ScriptableObjects.Browser
 
             Dictionary<string, FolderItem> folderCache = new Dictionary<string, FolderItem>();
             int id = 1;
+
+            IdLookup.Clear();
 
             foreach (var guid in guids)
             {
@@ -101,6 +105,8 @@ namespace Moths.ScriptableObjects.Browser
                     isFavourite = _browser.favourites.Contains(guid),
                     target = mainSO
                 };
+                if (!IdLookup.TryGetValue(guid, out var list)) list = IdLookup[guid] = new List<SOItem>();
+                IdLookup[guid].Add(mainItem);
 
                 // Attach to folder
                 if (parent != null)
@@ -123,6 +129,8 @@ namespace Moths.ScriptableObjects.Browser
                             target = (ScriptableObject)so,
                             isSubAsset = true,
                         };
+                        IdLookup[guid].Add(subItem);
+
                         mainItem.AddChild(subItem);
                     }
                 }
@@ -314,8 +322,19 @@ namespace Moths.ScriptableObjects.Browser
 
                 menu.ShowAsContext();
             }
+        }
 
-
+        public int FindIdByGuid(string guid, Object obj)
+        {
+            if (IdLookup.TryGetValue(guid, out var list))
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    if (list[i].target == obj) return list[i].id;
+                }
+                return -1;
+            }
+            return -1;
         }
 
     }

@@ -16,6 +16,8 @@ namespace Moths.ScriptableObjects.Browser
 
         public string selected;
 
+        private Dictionary<string, int> IdLookup = new Dictionary<string, int>();
+
         public RootFolderTreeView(ScriptableObjectBrowser browser, TreeViewState state) : base(state)
         {
             _browser = browser;
@@ -23,6 +25,8 @@ namespace Moths.ScriptableObjects.Browser
 
         protected override TreeViewItem BuildRoot()
         {
+            IdLookup.Clear();
+
             string rootPath = "Assets/" + this.rootPath;
             rootPath = rootPath.TrimEnd('/') + '/';
 
@@ -62,9 +66,15 @@ namespace Moths.ScriptableObjects.Browser
 
                 string currentPath = parts[0];
 
-                if (folderCache.TryGetValue(currentPath, out var folder)) continue;
+                if (folderCache.TryGetValue(currentPath, out var folder))
+                {
+                    IdLookup[guid] = folder.id;
+                    continue;
+                }
 
                 folder = new FolderItem { id = ++id, depth = 0, displayName = parts[0] };
+                IdLookup[guid] = folder.id;
+                
                 folderCache[currentPath] = folder;
 
                 root.AddChild(folder);
@@ -77,6 +87,16 @@ namespace Moths.ScriptableObjects.Browser
             return root;
         }
 
+        protected override bool CanMultiSelect(TreeViewItem item)
+        {
+            return false;
+        }
+
+        protected override void SelectionChanged(IList<int> selectedIds)
+        {
+            UpdateSelected(selectedIds[0]);
+        }
+
         protected override void RowGUI(RowGUIArgs args)
         {
             args.label = "📁 " + args.label;
@@ -86,6 +106,12 @@ namespace Moths.ScriptableObjects.Browser
             {
                 selected = Path.Combine(rootPath, args.item.displayName).Replace('\\', '/');
             }
+        }
+
+        public void UpdateSelected(int id)
+        {
+            var item = FindItem(id, rootItem);
+            selected = Path.Combine(rootPath, item.displayName).Replace('\\', '/');
         }
 
         protected override bool CanStartDrag(CanStartDragArgs args) => false;
@@ -138,6 +164,12 @@ namespace Moths.ScriptableObjects.Browser
             });
 
             menu.ShowAsContext();
+        }
+
+        public int FindIdByGuid(string guid)
+        {
+            if (IdLookup.TryGetValue(guid, out var id)) return id;
+            return -1;
         }
     }
 }

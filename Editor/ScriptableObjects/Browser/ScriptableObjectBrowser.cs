@@ -4,6 +4,10 @@ using UnityEditor.IMGUI.Controls;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System;
+using Object = UnityEngine.Object;
+using System.Reflection;
+using UnityEditorInternal;
 
 namespace Moths.ScriptableObjects.Browser
 {
@@ -46,10 +50,11 @@ namespace Moths.ScriptableObjects.Browser
         internal HashSet<string> favourites;
 
         string rootPath;
-
         string searchString = "";
-
         int selectedTab = 0; // 0 = All, 1 = Favourites
+
+        Object pingObject;
+        bool skipNextSelection;
 
         void OnEnable()
         {
@@ -74,6 +79,8 @@ namespace Moths.ScriptableObjects.Browser
 
             searchField = new SearchField();
             searchField.downOrUpArrowKeyPressed += treeView.SetFocusAndEnsureSelectedItem;
+
+            Selection.selectionChanged += SelectionChangedCallback;
         }
 
         private void OnDisable()
@@ -81,9 +88,11 @@ namespace Moths.ScriptableObjects.Browser
             EditorUserSettings.SetConfigValue("Moths/ScriptableObjectBrowser/treeViewState", JsonUtility.ToJson(treeViewState));
             EditorUserSettings.SetConfigValue("Moths/ScriptableObjectBrowser/rootViewState", JsonUtility.ToJson(rootViewState));
             EditorUserSettings.SetConfigValue("Moths/ScriptableObjectBrowser/rootPath", rootPath ?? "");
-        }//
+         
+            Selection.selectionChanged -= SelectionChangedCallback;
+        }
 
-        void OnGUI()
+        private void OnGUI()
         {
             bool isChanged = false;
             int newTab = GUILayout.Toolbar(selectedTab, new[] { "All", "Favourites" });
@@ -147,7 +156,6 @@ namespace Moths.ScriptableObjects.Browser
 
             EditorGUILayout.EndHorizontal();
 
-
             EditorGUILayout.BeginHorizontal();
 
             var rect = GUILayoutUtility.GetRect(0, 100000, 0, 100000);
@@ -160,11 +168,58 @@ namespace Moths.ScriptableObjects.Browser
                 treeView.rootPath = rootTreeView.selected;
                 treeView.Reload();
             }
-            treeView.OnGUI(treeViewRect);
 
+            if (pingObject)
+            {
+                //PingByGuid(rootViewRect, treeViewRect);
+            }
+            else
+            {
+
+            }
+
+            treeView.OnGUI(treeViewRect);
             rootTreeView.OnGUI(rootViewRect);
 
+            PingByGuid(rootViewRect, treeViewRect);
+
             EditorGUILayout.EndHorizontal();
+        }
+
+        private void PingByGuid(Rect rootViewRect, Rect treeViewRect)
+        {
+            if (!pingObject) return;
+
+            string pingGuid = AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(Selection.activeObject)).ToString();
+
+            int rootId = rootTreeView.FindIdByGuid(pingGuid);
+            if (rootId == -1) goto EXIT;
+
+            rootTreeView.SetSelection(new[] { rootId });
+            rootTreeView.FrameItem(rootId);
+            rootTreeView.OnGUI(rootViewRect);
+            rootTreeView.UpdateSelected(rootId);
+
+            if (treeView.rootPath != rootTreeView.selected)
+            {
+                treeView.rootPath = rootTreeView.selected;
+                treeView.Reload();
+            }
+
+            int id = treeView.FindIdByGuid(pingGuid, pingObject);
+            if (id == -1) goto EXIT;
+
+            treeView.SetSelection(new[] { id });
+            treeView.FrameItem(id);
+            treeView.OnGUI(treeViewRect);
+
+        EXIT:
+            if (treeView?.lastSelected?.target != null)
+            {
+                Selection.activeObject = treeView.lastSelected.target;
+                skipNextSelection = true;
+            }
+            pingObject = null;
         }
 
         internal void Reload()
@@ -190,7 +245,20 @@ namespace Moths.ScriptableObjects.Browser
             return Path.Combine("Assets", rootPath, string.Join("/", parts)).Replace('\\', '/');
         }
 
+        private void SelectionChangedCallback()
+        {
+            if (skipNextSelection)
+            {
+                skipNextSelection = false;
+                return;
+            }
+            if (Selection.activeObject is not ScriptableObject) return;
 
+            pingObject = Selection.activeObject;
+
+            EditorApplication.QueuePlayerLoopUpdate();
+            Repaint();
+        }
 
         private static HashSet<string> LoadFavourites()
         {
