@@ -395,6 +395,7 @@ namespace Moths.ScriptableObjects
                         Reload();
                     });
                 }
+                menu.AddSeparator("");
 
                 menu.AddItem(new GUIContent("Open"), false, () =>
                 {
@@ -406,6 +407,8 @@ namespace Moths.ScriptableObjects
                     SOEditorUtility.Duplicate(soItem.target);
                     Reload();
                 });
+
+                menu.AddSeparator("");
 
                 menu.AddItem(new GUIContent("Delete"), false, () =>
                 {
@@ -449,6 +452,15 @@ namespace Moths.ScriptableObjects
             {
                 GenericMenu menu = new GenericMenu();
 
+                menu.AddItem(new GUIContent("Create/Folder"), false, () =>
+                {
+                    string folderGuid = AssetDatabase.CreateFolder(itemPath, "New Folder");
+                    SOEditorUtility.CreateToFolder(typeof(ScriptableObjectContainer), AssetDatabase.GUIDToAssetPath(folderGuid));
+                    Reload();
+                });
+
+                menu.AddSeparator("Create");
+
                 foreach (var type in types)
                 {
                     menu.AddItem(new GUIContent("Create/" + type.createPath), false, () =>
@@ -458,7 +470,22 @@ namespace Moths.ScriptableObjects
                     });
                 }
 
+                menu.AddSeparator("");
 
+                menu.AddItem(new GUIContent("Delete"), false, () =>
+                {
+                    AssetDatabase.DeleteAsset(itemPath);
+                    Reload();
+                });
+
+                menu.AddItem(new GUIContent("Rename"), false, () =>
+                {
+                    TextPromptWindow.Show("Rename", item.displayName, newName =>
+                    {
+                        AssetDatabase.RenameAsset(itemPath, newName);
+                        Reload();
+                    });
+                });
 
                 menu.ShowAsContext();
             }
