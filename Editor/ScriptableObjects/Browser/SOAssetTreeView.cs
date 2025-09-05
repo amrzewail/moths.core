@@ -5,205 +5,19 @@ using System.Collections.Generic;
 using System.IO;
 
 using Object = UnityEngine.Object;
-using System.Linq;
 
-namespace Moths.ScriptableObjects
+namespace Moths.ScriptableObjects.Browser
 {
-    public class ScriptableObjectBrowser : EditorWindow
-    {
-        [MenuItem("Window/ScriptableObject Browser")]
-        public static void Open()
-        {
-            var wnd = GetWindow<ScriptableObjectBrowser>();
-            wnd.titleContent = new GUIContent("SO Browser");
-            wnd.Show();
-        }
-
-        TreeViewState treeViewState;
-        SOAssetTreeView treeView;
-        Vector2 favouritesScroll;
-        SearchField searchField;
-
-        string rootPath;
-
-        string searchString = "";
-
-        int selectedTab = 0; // 0 = All, 1 = Favourites
-
-        void OnEnable()
-        {
-            if (treeViewState == null)
-                treeViewState = new TreeViewState();
-
-            treeView = new SOAssetTreeView(treeViewState, SOEditorUtility.Types.ToArray());
-            treeView.searchString = "";
-            treeView.Reload();
-
-            rootPath = EditorPrefs.GetString("Moths/ScriptableObjectBrowser/rootPath");
-
-            searchField = new SearchField();
-            searchField.downOrUpArrowKeyPressed += treeView.SetFocusAndEnsureSelectedItem;
-        }
-
-        void OnGUI()
-        {
-            selectedTab = GUILayout.Toolbar(selectedTab, new[] { "All", "Favourites" });
-
-            if (selectedTab == 0)
-            {
-                DrawAllTab();
-            }
-            else if (selectedTab == 1)
-            {
-                DrawFavouritesTab();
-            }
-
-            string selectedAsset = "";
-            if (treeView != null && treeView.lastSelected?.target)
-            {
-                selectedAsset = treeView.lastSelected.assetPath.Substring("Assets/".Length);
-            }
-            GUILayout.Label(selectedAsset);
-        }
-
-        void DrawAllTab()
-        {
-            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-
-            if (GUILayout.Button("Refresh", EditorStyles.toolbarButton))
-                treeView.Reload();
-
-            
-            this.rootPath = GUILayout.TextField(this.rootPath, EditorStyles.toolbarTextField, GUILayout.Width(position.width * 0.4f));
-            if (this.rootPath != treeView.rootPath)
-            {
-                EditorPrefs.SetString("Moths/ScriptableObjectBrowser/rootPath", treeView.rootPath = rootPath);
-                treeView.Reload();
-            }
-
-            GUILayout.FlexibleSpace();
-
-            searchString = searchField.OnToolbarGUI(searchString);
-            if (treeView.searchFilter != searchString)
-            {
-                treeView.searchFilter = searchString;
-                treeView.Reload();
-            }
-
-            EditorGUILayout.EndHorizontal();
-
-            treeView.OnGUI(GUILayoutUtility.GetRect(0, 100000, 0, 100000));
-        }
-
-        internal static bool DrawRow(string guid, ScriptableObject obj, bool isFavourite)
-        {
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button(AssetPreview.GetMiniThumbnail(obj), GUILayout.Width(20), GUILayout.Height(20)))
-            {
-                AssetDatabase.OpenAsset(obj);
-            }
-
-            if (GUILayout.Button(obj.name, EditorStyles.label))
-            {
-                Selection.activeObject = obj;
-            }
-
-            GUILayout.FlexibleSpace();
-
-            if (GUILayout.Button(isFavourite ? "★" : "☆", EditorStyles.label))
-            {
-                SOAssetTreeView.RemoveFavourite(guid);
-                return false; // refresh next frame
-            }
-
-            EditorGUILayout.EndHorizontal();
-
-            return true;
-        }
-
-        Dictionary<string, bool> expandedFavourites = new Dictionary<string, bool>();
-
-        void DrawFavouritesTab()
-        {
-            var favourites = SOAssetTreeView.LoadFavourites();
-
-            favouritesScroll = EditorGUILayout.BeginScrollView(favouritesScroll);
-            foreach (var guid in favourites)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                if (string.IsNullOrEmpty(path)) continue;
-
-                ScriptableObject mainSO = AssetDatabase.LoadMainAssetAtPath(path) as ScriptableObject;
-                if (mainSO == null) continue;
-
-                Object[] subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(path);
-
-                // Ensure we track this guid in expanded state
-                if (!expandedFavourites.ContainsKey(guid))
-                    expandedFavourites[guid] = false;
-
-                // --- Main asset row
-                EditorGUILayout.BeginHorizontal();
-
-                if (subAssets != null && subAssets.Length > 0)
-                {
-                    // Draw arrow toggle
-                    string arrow = expandedFavourites[guid] ? "▼" : "▶";
-                    Rect rect = GUILayoutUtility.GetRect(20, EditorGUIUtility.singleLineHeight);
-                    expandedFavourites[guid] = EditorGUI.Foldout(rect, expandedFavourites[guid], GUIContent.none, false);
-                }
-                else
-                {
-                    EditorGUILayout.Space(20);
-                }
-
-                // Draw main asset row content
-                if (!DrawRow(guid, mainSO, true))
-                {
-                    EditorGUILayout.EndHorizontal();
-                    break;
-                }
-
-                EditorGUILayout.EndHorizontal();
-
-                // --- Sub-assets (only if expanded)
-                if (expandedFavourites[guid])
-                {
-                    if (subAssets != null && subAssets.Length > 0)
-                    {
-                        foreach (var so in subAssets)
-                        {
-                            EditorGUILayout.BeginHorizontal();
-                            GUILayout.Space(50); // indent under arrow + icon
-
-                            if (GUILayout.Button(AssetPreview.GetMiniThumbnail(so), GUILayout.Width(20), GUILayout.Height(20)))
-                            {
-                                AssetDatabase.OpenAsset(so);
-                            }
-
-                            if (GUILayout.Button(so.name, EditorStyles.label))
-                            {
-                                Selection.activeObject = so;
-                            }
-
-                            EditorGUILayout.EndHorizontal();
-                        }
-                    }
-                }
-            }
-            EditorGUILayout.EndScrollView();
-        }
-    }
-
     class SOAssetTreeView : TreeView
     {
+        public bool isFavourites;
         HashSet<string> favourites;
         TypeEntry[] types;
 
         public SOItem selectDragItem;
         public SOItem lastSelected;
         public string rootPath = "";
-        public string searchFilter;
+        public SearchFilter searchFilter;
 
         public SOAssetTreeView(TreeViewState state, TypeEntry[] types) : base(state)
         {
@@ -225,6 +39,8 @@ namespace Moths.ScriptableObjects
 
             foreach (var guid in guids)
             {
+                if (isFavourites && !favourites.Contains(guid)) continue;
+
                 string path = AssetDatabase.GUIDToAssetPath(guid);
 
                 if (!path.StartsWith(rootPath)) continue;
@@ -233,10 +49,20 @@ namespace Moths.ScriptableObjects
 
                 string assetName = Path.GetFileNameWithoutExtension(path);
 
-                //Apply search filter
-                if (!string.IsNullOrEmpty(searchFilter) &&
-                    !path.ToLower().Contains(searchFilter.ToLower()))
+
+                ScriptableObject mainSO = AssetDatabase.LoadMainAssetAtPath(rootPath + path) as ScriptableObject;
+                Object[] subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(rootPath + path);
+
+                if (!searchFilter.Apply(path.ToLower()))
+                {
+                    for (int i = 0; i < subAssets.Length; i++)
+                    {
+                        if (searchFilter.Apply(subAssets[i].name)) goto SKIP;
+                    }
                     continue;
+
+                SKIP:;
+                }
 
                 string[] parts = path.Split('/');
                 FolderItem parent = null;
@@ -260,9 +86,6 @@ namespace Moths.ScriptableObjects
                     parent = folder;
                 }
 
-                Object[] objs = AssetDatabase.LoadAllAssetsAtPath(rootPath + path);
-                ScriptableObject mainSO = AssetDatabase.LoadMainAssetAtPath(rootPath + path) as ScriptableObject;
-                Object[] subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(rootPath + path);
 
                 // Skip files without any SOs
                 if (mainSO == null) continue;
@@ -378,7 +201,7 @@ namespace Moths.ScriptableObjects
             var item = FindItem(id, rootItem);
             if (item == null) return;
 
-            string itemPath = GetItemPath(item);
+            string itemPath = ScriptableObjectBrowser.GetItemPath(rootPath, item);
 
             if (item is SOItem)
             {
@@ -493,34 +316,18 @@ namespace Moths.ScriptableObjects
 
         }
 
-
-        private static string GetItemPath(TreeViewItem item)
-        {
-            List<string> parts = new List<string>();
-
-            TreeViewItem current = item;
-            while (current != null && current.depth >= 0) // skip root (-1 depth)
-            {
-                parts.Add(current.displayName);
-                current = current.parent;
-            }
-
-            parts.Reverse();
-
-            // Root of project assets
-            return "Assets/" + string.Join("/", parts);
-        }
-
         void ToggleFavourite(string guid, bool fav)
         {
             if (fav) favourites.Add(guid);
             else favourites.Remove(guid);
             SaveFavourites();
+            if (isFavourites) Reload();
         }
 
         public static HashSet<string> LoadFavourites()
         {
-            var json = EditorPrefs.GetString("Moths/ScriptableObjectBrowser/favourites", "{\"items\":[]}");
+            var json = EditorUserSettings.GetConfigValue("Moths/ScriptableObjectBrowser/favourites");
+            if (string.IsNullOrEmpty(json)) json = "{\"items\":[]}";
             return new HashSet<string>(JsonUtility.FromJson<StringArray>(json).items);
         }
 
@@ -529,41 +336,16 @@ namespace Moths.ScriptableObjects
             var favs = LoadFavourites();
             favs.Remove(guid);
             var arr = new StringArray { items = new List<string>(favs).ToArray() };
-            EditorPrefs.SetString("Moths/ScriptableObjectBrowser/favourites", JsonUtility.ToJson(arr));
+            EditorUserSettings.SetConfigValue("Moths/ScriptableObjectBrowser/favourites", JsonUtility.ToJson(arr));
         }
 
         void SaveFavourites()
         {
             var arr = new StringArray { items = new List<string>(favourites).ToArray() };
-            EditorPrefs.SetString("Moths/ScriptableObjectBrowser/favourites", JsonUtility.ToJson(arr));
+            EditorUserSettings.SetConfigValue("Moths/ScriptableObjectBrowser/favourites", JsonUtility.ToJson(arr));
         }
 
         [System.Serializable]
         class StringArray { public string[] items; }
-    }
-
-    class SOItem : TreeViewItem
-    {
-        private ScriptableObject _target;
-
-        public string guid;
-        public bool isFavourite;
-        public bool isSubAsset;
-        public ScriptableObject target
-        {
-            get => _target;
-            set
-            {
-                _target = value;
-                assetPath = AssetDatabase.GetAssetPath(value);
-            }
-        }
-
-        public string assetPath;
-    }
-
-    class FolderItem : TreeViewItem
-    {
-        public FolderItem() : base() { }
     }
 }
