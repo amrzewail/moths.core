@@ -62,6 +62,7 @@ namespace Moths.ScriptableObjects.Browser
                 {
                     for (int i = 0; i < subAssets.Length; i++)
                     {
+                        if (!subAssets[i]) continue;
                         if (searchFilter.Apply(subAssets[i].name)) goto SKIP;
                     }
                     continue;

@@ -5,6 +5,7 @@ using UnityEditor.UIElements;
 
 using Moths.Internal.Packages;
 using System.IO;
+using Moths.Cmd;
 
 namespace Moths.Editor.Internal.Packages
 {
@@ -121,7 +122,26 @@ namespace Moths.Editor.Internal.Packages
                 GenerateJson((Package)serializedObject.targetObject);
             };
 
+            var commitMessage = new TextField("Commit Message");
+            commitMessage.style.width = Length.Percent(100);
+            commitMessage.style.marginTop = 24;
+
+            var commitBtn = new Button();
+            commitBtn.text = "Git Push";
+
+            commitBtn.style.width = 256;
+
+            commitBtn.clicked += () =>
+            {
+                (string result, string error) = Command.Run(serializedObject.targetObject, "git", "add .");
+                (result, error) = Command.Run(serializedObject.targetObject, "git", $"commit -m \"{commitMessage.text}\"");
+                (result, error) = Command.Run(serializedObject.targetObject, "git", $"push");
+            };
+
             root.Add(generateBtn);
+
+            root.Add(commitMessage);
+            root.Add(commitBtn);
 
             return root;
 
