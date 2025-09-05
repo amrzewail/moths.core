@@ -200,6 +200,7 @@ namespace Moths.ScriptableObjects
         HashSet<string> favourites;
         TypeEntry[] types;
 
+        public SOItem selectDragItem;
         public SOItem lastSelected;
         public string rootPath = "";
         public string searchFilter;
@@ -310,6 +311,17 @@ namespace Moths.ScriptableObjects
             return root;
         }
 
+        protected override bool CanStartDrag(CanStartDragArgs args) => true;
+
+        protected override void SetupDragAndDrop(SetupDragAndDropArgs args)
+        {
+            if (selectDragItem != null)
+            {
+                DragAndDrop.PrepareStartDrag();
+                DragAndDrop.objectReferences = new Object[] { selectDragItem.target };
+                DragAndDrop.StartDrag(selectDragItem.target.name);
+            }
+        }
 
         protected override void RowGUI(RowGUIArgs args)
         {
@@ -320,10 +332,14 @@ namespace Moths.ScriptableObjects
 
                 if (args.selected)
                 {
-                    if (lastSelected != item)
+                    selectDragItem = item;
+                    if (Event.current.type == EventType.MouseUp)
                     {
-                        Selection.activeObject = obj;
-                        lastSelected = item;
+                        if (lastSelected != item)
+                        {
+                            Selection.activeObject = obj;
+                            lastSelected = item;
+                        }
                     }
                 }
 
@@ -333,7 +349,7 @@ namespace Moths.ScriptableObjects
                 Rect selectRect = new Rect(14 + 14 * args.item.depth, rect.y, 20, rect.height);
                 if (GUI.Button(selectRect, AssetPreview.GetMiniThumbnail(obj)))
                 {
-                    Selection.activeObject = obj;
+                    AssetDatabase.OpenAsset(obj);
                 }
 
                 args.rowRect = rect;
