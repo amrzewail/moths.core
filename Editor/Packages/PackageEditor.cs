@@ -132,27 +132,24 @@ namespace Moths.Editor.Internal.Packages
 
             commitBtn.style.width = 256;
 
-            commitBtn.clicked += () =>
-            {
-                (string result, string error) = Command.Run(serializedObject.targetObject, "git", "add .");
-                (result, error) = Command.Run(serializedObject.targetObject, "git", $"commit -m \"{commitMessage.text}\"");
-                (result, error) = Command.Run(serializedObject.targetObject, "git", $"push");
-                (result, error) = Command.Run(serializedObject.targetObject, "git", $"status");
-                Debug.Log(result);
-            };
-
             var gitStatus = new Label();
             gitStatus.style.width = Length.Percent(100);
             gitStatus.style.marginTop = 12;
 
             var status = Command.Run(serializedObject.targetObject, "git", "status");
-            if (gitStatus != null)
+            gitStatus.text = status.result;
+
+            commitBtn.clicked += () =>
             {
+                var add = Command.Run(serializedObject.targetObject, "git", "add .");
+                var commit = Command.Run(serializedObject.targetObject, "git", $"commit -m \"{commitMessage.text}\"");
+                var push = Command.Run(serializedObject.targetObject, "git", $"push");
+                var status = Command.Run(serializedObject.targetObject, "git", "status");
                 gitStatus.text = status.result;
-            }
+                Debug.Log(status.result);
+            };
 
             root.Add(generateBtn);
-
             root.Add(commitMessage);
             root.Add(commitBtn);
             root.Add(gitStatus);
