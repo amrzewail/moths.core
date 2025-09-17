@@ -7,6 +7,7 @@ using Moths.Internal.Packages;
 using System.IO;
 using Moths.Cmd;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Moths.Editor.Internal.Packages
 {
@@ -127,10 +128,39 @@ namespace Moths.Editor.Internal.Packages
             commitMessage.style.width = Length.Percent(100);
             commitMessage.style.marginTop = 24;
 
+            var horizontalGroup = new VisualElement();
+            horizontalGroup.style.width = Length.Percent(100);
+            horizontalGroup.style.flexDirection = FlexDirection.Row;
+            horizontalGroup.style.justifyContent = Justify.SpaceBetween;
+
+            var branchesCmd = Command.Run(serializedObject.targetObject, "git", "branch -a");
+            List<string> branches = new List<string>();
+            int selectedBranch = 0;
+            {
+                var branchLines = branchesCmd.result.Split('\n');
+                for (int i = 0; i < branchLines.Length; i++)
+                {
+                    var line = branchLines[i].Trim();
+                    if (line.StartsWith("*"))
+                    {
+                        line = line.Substring(1).Trim();
+                        selectedBranch = branches.Count;
+                    }
+                    if (!string.IsNullOrEmpty(line))
+                        branches.Add(line);
+                }
+            }
+
+            var branchDropdown = new DropdownField(branches, selectedBranch);
+            branchDropdown.label = "";
+            branchDropdown.style.width = 256;
+
             var commitBtn = new Button();
             commitBtn.text = "Git Push";
-
             commitBtn.style.width = 256;
+
+            horizontalGroup.Add(branchDropdown);
+            horizontalGroup.Add(commitBtn);
 
             var gitStatus = new Label();
             gitStatus.style.width = Length.Percent(100);
@@ -138,6 +168,16 @@ namespace Moths.Editor.Internal.Packages
 
             var status = Command.Run(serializedObject.targetObject, "git", "status");
             gitStatus.text = status.result;
+
+            branchDropdown.RegisterValueChangedCallback(value =>
+            {
+                var checkout = Command.Run(serializedObject.targetObject, "git", $"checkout {value.newValue}");
+                var status = Command.Run(serializedObject.targetObject, "git", "status");
+                gitStatus.text = status.result;
+                Debug.Log(status.result);
+
+                AssetDatabase.Refresh();
+            });
 
             commitBtn.clicked += () =>
             {
@@ -151,7 +191,7 @@ namespace Moths.Editor.Internal.Packages
 
             root.Add(generateBtn);
             root.Add(commitMessage);
-            root.Add(commitBtn);
+            root.Add(horizontalGroup);
             root.Add(gitStatus);
 
             return root;
