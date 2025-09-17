@@ -130,6 +130,7 @@ namespace Moths.Editor.Internal.Packages
 
             var horizontalGroup = new VisualElement();
             horizontalGroup.style.width = Length.Percent(100);
+            horizontalGroup.style.display = DisplayStyle.Flex;
             horizontalGroup.style.flexDirection = FlexDirection.Row;
             horizontalGroup.style.justifyContent = Justify.SpaceBetween;
 
@@ -153,11 +154,11 @@ namespace Moths.Editor.Internal.Packages
 
             var branchDropdown = new DropdownField(branches, selectedBranch);
             branchDropdown.label = "";
-            branchDropdown.style.width = 256;
+            branchDropdown.style.flexGrow = 1;
 
             var commitBtn = new Button();
             commitBtn.text = "Git Push";
-            commitBtn.style.width = 256;
+            commitBtn.style.flexGrow = 1;
 
             horizontalGroup.Add(branchDropdown);
             horizontalGroup.Add(commitBtn);
