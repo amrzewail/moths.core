@@ -120,12 +120,9 @@ namespace Moths.Internal.Packages
     {
         [SerializeField] PackageData _package;
 
-
         public override string ToString()
         {
-
             StringBuilder builder = new StringBuilder();
-
 
             builder.AppendLine("{");
 

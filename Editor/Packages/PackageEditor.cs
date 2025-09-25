@@ -124,6 +124,12 @@ namespace Moths.Editor.Internal.Packages
                 GenerateJson((Package)serializedObject.targetObject);
             };
 
+
+            root.Add(generateBtn);
+
+            // check if git exists
+            if (string.IsNullOrEmpty(Command.Run(serializedObject.targetObject, "git", "status").result)) return root;
+
             var commitMessage = new TextField("Commit Message");
             commitMessage.style.width = Length.Percent(100);
             commitMessage.style.marginTop = 24;
@@ -190,7 +196,6 @@ namespace Moths.Editor.Internal.Packages
                 Debug.Log(status.result);
             };
 
-            root.Add(generateBtn);
             root.Add(commitMessage);
             root.Add(horizontalGroup);
             root.Add(gitStatus);
