@@ -18,5 +18,12 @@ namespace Moths.Serialization
         public T Value => _object == null ? default : (T)_object;
 
         public override Type GetInterfaceType() => typeof(T);
+
+        public InterfaceReference(T value)
+        {
+            _object = value;
+        }
+
+        public static implicit operator T(InterfaceReference<T> reference) => reference.Value;
     }
 }

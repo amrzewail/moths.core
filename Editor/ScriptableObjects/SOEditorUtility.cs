@@ -153,7 +153,7 @@ namespace Moths.ScriptableObjects
             {
                 // Duplicate sub-asset
                 ScriptableObject clone = Object.Instantiate(asset);
-                clone.name = asset.name;
+                clone.name = $"{asset.name} Copy";
 
                 Undo.RegisterCreatedObjectUndo(clone, "Duplicate Sub-Asset");
                 AssetDatabase.AddObjectToAsset(clone, AssetDatabase.LoadMainAssetAtPath(path));
