@@ -32,7 +32,7 @@ namespace Moths.Debugging
 #if UNITY_EDITOR
                 return UnityEditor.EditorPrefs.GetBool(EnableLoggerPrefs, true);
 #endif
-                return true;
+                return IsActive;
             }
             set
             {
@@ -55,8 +55,11 @@ namespace Moths.Debugging
             }
         }
 
+        private static bool _isEnabled;
         private StringBuilder _builder = new StringBuilder();
         private GUIStyle _style;
+
+        public static bool IsActive { get; set; } = true;
 
         public static void Register(ILoggable loggable)
         {
@@ -72,11 +75,14 @@ namespace Moths.Debugging
 
         private void Awake()
         {
+            _isEnabled = IsEnabled;
             DontDestroyOnLoad(gameObject);
         }
 
         private void OnGUI()
         {
+            if (!IsActive || !_isEnabled) return;
+
             if (_style == null)
             {
                 _style = new GUIStyle(GUI.skin.label);
