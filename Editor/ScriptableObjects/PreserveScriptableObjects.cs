@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -53,14 +52,6 @@ namespace Moths.Core.Editor
             EditorApplication.playModeStateChanged += RevertScriptableObjects;
         }
 
-        static string[] OnWillSaveAssets(string[] paths)
-        {
-            if (EditorApplication.isPlayingOrWillChangePlaymode) return paths;
-
-            CacheScriptableObjects();
-            return paths;
-        }
-
         private static async void RevertScriptableObjects(PlayModeStateChange change)
         {
             if (change == PlayModeStateChange.ExitingPlayMode)
@@ -87,6 +78,8 @@ namespace Moths.Core.Editor
                         EditorUtility.SetDirty(asset);
                     }
                 }
+
+                DeleteCachedScriptableObjects();
 
                 AssetDatabase.Refresh();
             }
@@ -194,12 +187,11 @@ namespace Moths.Core.Editor
             return default;
         }
 
-        private static void DeleteCache()
+        private static void DeleteCachedScriptableObjects()
         {
             if (File.Exists(CachePath))
             {
-                Debug.Log($"ScriptableObjects Delete cache");
-                //File.Delete(CachePath);
+                File.Delete(CachePath);
             }
         }
     }
