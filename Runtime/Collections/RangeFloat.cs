@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Moths.Collections
@@ -25,6 +23,15 @@ namespace Moths.Collections
         public bool Contains(float value, float errorRange = 0)
         {
             return (value >= min - errorRange) && (value <= max + errorRange);
+        }
+
+        public float Clamp(float value) => Mathf.Clamp(value, min, max);
+
+        public float Lerp(float t) => Mathf.Lerp(min, max, t);
+
+        public static implicit operator RangeFloat((float min, float max) range)
+        {
+            return new RangeFloat(range.min, range.max);
         }
     }
 }
