@@ -1,12 +1,14 @@
+using Codice.CM.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
 namespace Moths.Serialization
 {
-    [CustomPropertyDrawer(typeof(InterfaceReference), true)]
+    [CustomPropertyDrawer(typeof(InterfaceReference<>), true)]
     public class InterfaceReferenceDrawer : PropertyDrawer
     {
         private Type _interfaceType;
@@ -37,7 +39,10 @@ namespace Moths.Serialization
         {
             if (property.boxedValue == null) return;
 
-            _interfaceType = ((InterfaceReference)property.boxedValue).GetInterfaceType();
+            Type actualType = property.boxedValue.GetType();
+            MethodInfo getInterfaceMethod = actualType.GetMethod("GetInterfaceType", BindingFlags.Public | BindingFlags.Instance);
+
+            _interfaceType = (Type)getInterfaceMethod.Invoke(property.boxedValue, null);
 
             var type = _interfaceType;
             var types = AppDomain.CurrentDomain.GetAssemblies()

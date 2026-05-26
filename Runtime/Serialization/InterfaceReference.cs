@@ -4,20 +4,13 @@ using UnityEngine;
 namespace Moths.Serialization
 {
     [System.Serializable]
-    public abstract class InterfaceReference
+    public struct InterfaceReference<T>
     {
-        [SerializeReference] protected object _object;
+        [SerializeReference] private object _object;
 
-        public abstract Type GetInterfaceType();
-    }
-
-
-    [System.Serializable]
-    public class InterfaceReference<T> : InterfaceReference
-    {
         public T Value => _object == null ? default : (T)_object;
 
-        public override Type GetInterfaceType() => typeof(T);
+        public Type GetInterfaceType() => typeof(T);
 
         public InterfaceReference(T value)
         {
@@ -25,5 +18,7 @@ namespace Moths.Serialization
         }
 
         public static implicit operator T(InterfaceReference<T> reference) => reference.Value;
+
+        public static implicit operator bool(InterfaceReference<T> reference) => reference._object != null && reference.Value != null;
     }
 }

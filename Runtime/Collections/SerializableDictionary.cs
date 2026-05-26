@@ -82,6 +82,12 @@ namespace Moths.Collections
             return _dictionary.ContainsKey(key);
         }
 
+        public bool TryGetValue(TKey key, out TValue value)
+        {
+            ValidateDictionary();
+            return _dictionary.TryGetValue(key, out value);
+        }
+
         private void ValidateDictionary()
         {
             if (_dictionary != null) return;
