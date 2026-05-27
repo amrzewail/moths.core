@@ -13,7 +13,7 @@ namespace Moths.Serialization
     {
         private Type _interfaceType;
         private List<Type> _implementedTypes;
-        private string[] _implementedTypesNames;
+        private string[] _implementedTypesPaths;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -50,7 +50,23 @@ namespace Moths.Serialization
                 .Where(p => !p.IsInterface && !p.IsAbstract && p != type && type.IsAssignableFrom(p));
 
             _implementedTypes = types.ToList();
-            _implementedTypesNames = _implementedTypes.Select(t => t.Name).Prepend("Null").ToArray();
+            _implementedTypesPaths = _implementedTypes.Select(t =>
+            {
+                // 1. Try to get the attribute from the class type
+                // (Note: If your attribute class is named 'InterfaceReferenceAttribute', use that instead)
+                var interfaceAttr = t.GetCustomAttribute<InterfaceReferenceAttribute>();
+
+                // 2. If the attribute exists, return its Path. Otherwise, fall back to the class Name.
+                if (interfaceAttr != null)
+                {
+                    return interfaceAttr.path; // Replace .Path with the actual property name in your attribute
+                }
+                else
+                {
+                    return t.Name;
+                }
+
+            }).Prepend("Null").ToArray();
         }
 
         private void DrawProperty(Rect position, SerializedProperty property, GUIContent label)
@@ -66,7 +82,7 @@ namespace Moths.Serialization
                 selected = _implementedTypes.IndexOf(property.managedReferenceValue.GetType()) + 1;
             }
 
-            int newSelected = EditorGUI.Popup(new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight), label.text, selected, _implementedTypesNames);
+            int newSelected = EditorGUI.Popup(new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight), label.text, selected, _implementedTypesPaths);
 
             if (newSelected > 0 && newSelected != selected)
             {

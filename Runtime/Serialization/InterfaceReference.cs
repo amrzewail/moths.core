@@ -3,6 +3,15 @@ using UnityEngine;
 
 namespace Moths.Serialization
 {
+    public class InterfaceReferenceAttribute : System.Attribute
+    {
+        public string path { get; private set; }
+        public InterfaceReferenceAttribute(string path)
+        {
+            this.path = path;
+        }
+    }
+
     [System.Serializable]
     public struct InterfaceReference<T>
     {
