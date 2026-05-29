@@ -33,7 +33,7 @@ namespace Moths.Collections
             }
         }
 
-        [SerializeField] KeyValuePair[] _pairs;
+        [SerializeField] List<KeyValuePair> _pairs;
 
         private Dictionary<TKey, TValue> _dictionary;
 
@@ -48,17 +48,18 @@ namespace Moths.Collections
             {
                 if (!Application.isPlaying)
                 {
-                    if (_pairs == null) _pairs = new KeyValuePair[0];
+                    if (_pairs == null) _pairs = new();
                     var hashSet = _pairs.ToHashSet();
                     hashSet.Add(new KeyValuePair
                     {
                         key = key,
                         value = value,
                     });
-                    _pairs = hashSet.ToArray();
+                    _pairs = hashSet.ToList();
                     _dictionary = null;
                     return;
                 }
+                ValidateDictionary();
                 _dictionary[key] = value;
             }
         }
@@ -67,9 +68,7 @@ namespace Moths.Collections
         {
             if (!Application.isPlaying)
             {
-                var hashSet = _pairs.ToHashSet();
-                hashSet.Remove(new() { key = key });
-                _pairs = hashSet.ToArray();
+                _pairs.Remove(new() { key = key });
                 _dictionary = null;
                 return;
             }
@@ -88,12 +87,19 @@ namespace Moths.Collections
             return _dictionary.TryGetValue(key, out value);
         }
 
+        public void UpdatePairsForSerialization()
+        {
+            ValidateDictionary();
+            _pairs.Clear();
+            foreach (var pair in _dictionary) _pairs.Add(new() { key = pair.Key, value = pair.Value });
+        }
+
         private void ValidateDictionary()
         {
             if (_dictionary != null) return;
-            if (_pairs == null) _pairs = new KeyValuePair[0];
+            if (_pairs == null) _pairs = new();
 
-            _dictionary = new(_pairs.Length);
+            _dictionary = new(_pairs.Count);
 
             foreach (var pair in _pairs) _dictionary[pair.key] = pair.value;
         }
