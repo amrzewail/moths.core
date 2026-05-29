@@ -75,6 +75,14 @@ namespace Moths.Collections
             _dictionary.Remove(key);
         }
 
+        public void Clear()
+        {
+            if (_pairs == null) _pairs = new();
+            if (_dictionary == null) _dictionary = new();
+            _pairs.Clear();
+            _dictionary.Clear();
+        }
+
         public bool ContainsKey(TKey key)
         {
             ValidateDictionary();
