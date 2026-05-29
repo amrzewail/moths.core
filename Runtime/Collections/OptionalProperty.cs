@@ -17,6 +17,12 @@ namespace Moths.Collections
             }
         }
 
+        public OptionalProperty(TValue value, bool isEnabled = false)
+        {
+            _isEnabled = isEnabled;
+            _value = value;
+        }
+
         public void Set(TValue value)
         {
             _isEnabled = true;
