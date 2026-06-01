@@ -32,7 +32,7 @@ namespace Moths.ScriptableObjects.Browser
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
 
-            string[] guids = AssetDatabase.FindAssets("t:ScriptableObject", new[] { "Assets" });
+            string[] guids = AssetDatabase.FindAssets("t:ScriptableObject t:AnimatorController", new[] { "Assets" });
 
             Dictionary<string, FolderItem> folderCache = new Dictionary<string, FolderItem>();
             int id = 1;
@@ -132,17 +132,17 @@ namespace Moths.ScriptableObjects.Browser
             menu.AddItem(new GUIContent("Create/Folder"), false, () =>
             {
                 string folderGuid = AssetDatabase.CreateFolder(itemPath, "New Folder");
-                SOEditorUtility.CreateToFolder(typeof(ScriptableObjectContainer), AssetDatabase.GUIDToAssetPath(folderGuid));
+                ObjectEditorUtility.CreateToFolder(typeof(ScriptableObjectContainer), AssetDatabase.GUIDToAssetPath(folderGuid));
                 _browser.Reload();
             });
 
             menu.AddSeparator("Create");
 
-            foreach (var type in SOEditorUtility.Types)
+            foreach (var type in ObjectEditorUtility.Types)
             {
                 menu.AddItem(new GUIContent("Create/" + type.createPath), false, () =>
                 {
-                    SOEditorUtility.CreateToFolder(type.type, itemPath);
+                    ObjectEditorUtility.CreateToFolder(type.type, itemPath);
                     _browser.Reload();
                 });
             }

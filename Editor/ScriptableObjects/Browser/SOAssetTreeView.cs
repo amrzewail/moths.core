@@ -35,7 +35,7 @@ namespace Moths.ScriptableObjects.Browser
 
             var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
 
-            string[] guids = AssetDatabase.FindAssets("t:ScriptableObject", new[] { "Assets" });
+            string[] guids = AssetDatabase.FindAssets("t:ScriptableObject t:AnimatorController", new[] { "Assets" });
 
             Dictionary<string, FolderItem> folderCache = new Dictionary<string, FolderItem>();
             int id = 1;
@@ -55,7 +55,7 @@ namespace Moths.ScriptableObjects.Browser
                 string assetName = Path.GetFileNameWithoutExtension(path);
 
 
-                ScriptableObject mainSO = AssetDatabase.LoadMainAssetAtPath(rootPath + path) as ScriptableObject;
+                Object mainSO = AssetDatabase.LoadMainAssetAtPath(rootPath + path) as Object;
                 Object[] subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(rootPath + path);
 
                 if (!searchFilter.Apply(path.ToLower()))
@@ -225,7 +225,7 @@ namespace Moths.ScriptableObjects.Browser
                 {
                     menu.AddItem(new GUIContent("Create/" + type.createPath), false, () =>
                     {
-                        SOEditorUtility.CreateToAsset(type.type, AssetDatabase.LoadMainAssetAtPath(itemPath));
+                        ObjectEditorUtility.CreateToAsset(type.type, AssetDatabase.LoadMainAssetAtPath(itemPath));
                         Reload();
                     });
                 }
@@ -238,7 +238,7 @@ namespace Moths.ScriptableObjects.Browser
 
                 menu.AddItem(new GUIContent("Duplicate"), false, () =>
                 {
-                    SOEditorUtility.Duplicate(soItem.target);
+                    ObjectEditorUtility.Duplicate(soItem.target);
                     Reload();
                 });
 
@@ -246,7 +246,7 @@ namespace Moths.ScriptableObjects.Browser
 
                 menu.AddItem(new GUIContent("Delete"), false, () =>
                 {
-                    SOEditorUtility.Delete(soItem.target);
+                    ObjectEditorUtility.Delete(soItem.target);
                     Reload();
                 });
 
@@ -254,7 +254,7 @@ namespace Moths.ScriptableObjects.Browser
                 {
                     var target = soItem.target;
                     if (target == null) return;
-                    SOEditorUtility.Rename(target, Reload);
+                    ObjectEditorUtility.Rename(target, Reload);
                 });
 
                 menu.AddItem(new GUIContent("Reimport"), false, () =>
@@ -297,7 +297,7 @@ namespace Moths.ScriptableObjects.Browser
                 menu.AddItem(new GUIContent("Create/Folder"), false, () =>
                 {
                     string folderGuid = AssetDatabase.CreateFolder(itemPath, "New Folder");
-                    SOEditorUtility.CreateToFolder(typeof(ScriptableObjectContainer), AssetDatabase.GUIDToAssetPath(folderGuid));
+                    ObjectEditorUtility.CreateToFolder(typeof(ScriptableObjectContainer), AssetDatabase.GUIDToAssetPath(folderGuid));
                     Reload();
                 });
 
@@ -307,7 +307,7 @@ namespace Moths.ScriptableObjects.Browser
                 {
                     menu.AddItem(new GUIContent("Create/" + type.createPath), false, () =>
                     {
-                        SOEditorUtility.CreateToFolder(type.type, itemPath);
+                        ObjectEditorUtility.CreateToFolder(type.type, itemPath);
                         Reload();
                     });
                 }

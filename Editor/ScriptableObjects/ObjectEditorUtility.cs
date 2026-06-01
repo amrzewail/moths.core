@@ -59,13 +59,13 @@ namespace Moths.ScriptableObjects
     }
 
     [InitializeOnLoad]
-    public static class SOEditorUtility
+    public static class ObjectEditorUtility
     {
         private static List<TypeEntry> _types = new List<TypeEntry>();
 
         public static IReadOnlyList<TypeEntry> Types => _types;
 
-        static SOEditorUtility()
+        static ObjectEditorUtility()
         {
             RefreshTypes();
         }
@@ -143,7 +143,7 @@ namespace Moths.ScriptableObjects
             return obj;
         }
 
-        public static void Duplicate(ScriptableObject asset)
+        public static void Duplicate(Object asset)
         {
             if (asset == null) return;
 
@@ -152,7 +152,7 @@ namespace Moths.ScriptableObjects
             if (AssetDatabase.IsSubAsset(asset))
             {
                 // Duplicate sub-asset
-                ScriptableObject clone = Object.Instantiate(asset);
+                Object clone = Object.Instantiate(asset);
                 clone.name = $"{asset.name} Copy";
 
                 Undo.RegisterCreatedObjectUndo(clone, "Duplicate Sub-Asset");
@@ -173,7 +173,7 @@ namespace Moths.ScriptableObjects
             }
         }
 
-        public static void Delete(ScriptableObject asset)
+        public static void Delete(Object asset)
         {
             string mainPath = AssetDatabase.GetAssetPath(asset);
 
@@ -199,7 +199,7 @@ namespace Moths.ScriptableObjects
             }
         }
 
-        public static void Rename(ScriptableObject asset, Action onComplete)
+        public static void Rename(Object asset, Action onComplete)
         {
             var target = asset;
 

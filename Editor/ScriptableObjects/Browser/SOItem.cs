@@ -6,12 +6,12 @@ namespace Moths.ScriptableObjects.Browser
 {
     class SOItem : TreeViewItem
     {
-        private ScriptableObject _target;
+        private Object _target;
 
         public string guid;
         public bool isFavourite;
         public bool isSubAsset;
-        public ScriptableObject target
+        public Object target
         {
             get => _target;
             set

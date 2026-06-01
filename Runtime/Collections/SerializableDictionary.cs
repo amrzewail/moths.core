@@ -35,7 +35,7 @@ namespace Moths.Collections
 
         [SerializeField] List<KeyValuePair> _pairs;
 
-        private Dictionary<TKey, TValue> _dictionary;
+        private Dictionary<TKey, TValue> _dictionary = new();
 
         public TValue this[TKey key]
         {
@@ -50,13 +50,14 @@ namespace Moths.Collections
                 {
                     if (_pairs == null) _pairs = new();
                     var hashSet = _pairs.ToHashSet();
-                    hashSet.Add(new KeyValuePair
+                    var pair = new KeyValuePair
                     {
                         key = key,
                         value = value,
-                    });
+                    };
+                    if (hashSet.Contains(pair)) hashSet.Remove(pair);
+                    hashSet.Add(pair);
                     _pairs = hashSet.ToList();
-                    _dictionary = null;
                     return;
                 }
                 ValidateDictionary();
@@ -69,7 +70,7 @@ namespace Moths.Collections
             if (!Application.isPlaying)
             {
                 _pairs.Remove(new() { key = key });
-                _dictionary = null;
+                _dictionary.Clear();
                 return;
             }
             _dictionary.Remove(key);
@@ -104,10 +105,11 @@ namespace Moths.Collections
 
         private void ValidateDictionary()
         {
-            if (_dictionary != null) return;
+            if (Application.isPlaying && _dictionary != null && _dictionary.Count == _pairs.Count) return;
+            
             if (_pairs == null) _pairs = new();
 
-            _dictionary = new(_pairs.Count);
+            _dictionary.Clear();
 
             foreach (var pair in _pairs) _dictionary[pair.key] = pair.value;
         }

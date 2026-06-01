@@ -67,7 +67,7 @@ namespace Moths.ScriptableObjects.Browser
             treeViewState = string.IsNullOrEmpty(treeViewStateJson) ? new TreeViewState() : JsonUtility.FromJson<TreeViewState>(treeViewStateJson);
             rootViewState = string.IsNullOrEmpty(rootTreeViewStateJson) ? new TreeViewState() : JsonUtility.FromJson<TreeViewState>(rootTreeViewStateJson);
 
-            treeView = new SOAssetTreeView(this, treeViewState, SOEditorUtility.Types.ToArray());
+            treeView = new SOAssetTreeView(this, treeViewState, ObjectEditorUtility.Types.ToArray());
             treeView.searchString = "";
 
             rootTreeView = new RootFolderTreeView(this, rootViewState);
@@ -247,6 +247,8 @@ namespace Moths.ScriptableObjects.Browser
 
         private void SelectionChangedCallback()
         {
+            return;
+
             if (skipNextSelection)
             {
                 skipNextSelection = false;
