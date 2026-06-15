@@ -109,8 +109,6 @@ namespace Moths.Collections
             
             if (_pairs == null) _pairs = new();
 
-            _dictionary.Clear();
-
             foreach (var pair in _pairs) _dictionary[pair.key] = pair.value;
         }
 
