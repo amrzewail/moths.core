@@ -8,6 +8,17 @@ using UnityEngine.UIElements;
 
 namespace Moths.Collections
 {
+    internal static class SerializableDictionary
+    {
+        internal static HashSet<object> DidInitialize;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Initialize()
+        {
+            DidInitialize = new();
+        }
+    }
+
     [System.Serializable]
     public class SerializableDictionary<TKey, TValue>
     {
@@ -41,7 +52,7 @@ namespace Moths.Collections
         {
             get
             {
-                ValidateDictionary(); 
+                SyncDictionaryWithPairs(); 
                 return _dictionary[key];
             }
             set
@@ -58,9 +69,10 @@ namespace Moths.Collections
                     if (hashSet.Contains(pair)) hashSet.Remove(pair);
                     hashSet.Add(pair);
                     _pairs = hashSet.ToList();
+                    SyncDictionaryWithPairs();
                     return;
                 }
-                ValidateDictionary();
+                SyncDictionaryWithPairs();
                 _dictionary[key] = value;
             }
         }
@@ -86,27 +98,33 @@ namespace Moths.Collections
 
         public bool ContainsKey(TKey key)
         {
-            ValidateDictionary();
+            SyncDictionaryWithPairs();
             return _dictionary.ContainsKey(key);
         }
 
         public bool TryGetValue(TKey key, out TValue value)
         {
-            ValidateDictionary();
+            SyncDictionaryWithPairs();
             return _dictionary.TryGetValue(key, out value);
         }
 
         public void UpdatePairsForSerialization()
         {
-            ValidateDictionary();
             _pairs.Clear();
             foreach (var pair in _dictionary) _pairs.Add(new() { key = pair.Key, value = pair.Value });
         }
 
-        private void ValidateDictionary()
+        private void SyncDictionaryWithPairs()
         {
-            if (Application.isPlaying && _dictionary != null && _dictionary.Count == _pairs.Count) return;
-            
+            if (Application.isPlaying)
+            {
+                if (SerializableDictionary.DidInitialize.Contains(this)) return;
+
+                SerializableDictionary.DidInitialize.Add(this);
+            }
+
+        SYNC:
+
             if (_pairs == null) _pairs = new();
 
             foreach (var pair in _pairs) _dictionary[pair.key] = pair.value;
@@ -118,7 +136,7 @@ namespace Moths.Collections
         // Duck-typed struct enumerator for zero-allocation foreach loops
         public Enumerator GetEnumerator()
         {
-            ValidateDictionary();
+            SyncDictionaryWithPairs();
             return new Enumerator(_dictionary);
         }
 
