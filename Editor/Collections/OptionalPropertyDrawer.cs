@@ -30,8 +30,13 @@ namespace Moths.Collections
                 position.height
             );
 
+            EditorGUI.BeginChangeCheck();
             EditorGUI.showMixedValue = isEnabled.hasMultipleDifferentValues;
-            isEnabled.boolValue = EditorGUI.Toggle(toggleRect, GUIContent.none, isEnabled.boolValue);
+            bool newIsEnabled = EditorGUI.Toggle(toggleRect, GUIContent.none, isEnabled.boolValue);
+            if (EditorGUI.EndChangeCheck())
+            {
+                isEnabled.boolValue = newIsEnabled;
+            }
             EditorGUI.showMixedValue = false;
 
             using (new EditorGUI.DisabledScope(!isEnabled.boolValue))
