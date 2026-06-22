@@ -23,9 +23,28 @@ namespace Moths.Collections
 
             Rect toggleRect = new Rect(position.x + position.width - toggleWidth, position.y, toggleWidth, EditorGUIUtility.singleLineHeight);
 
-            useLocalization.boolValue = EditorGUI.Toggle(toggleRect, GUIContent.none, useLocalization.boolValue);
+            EditorGUI.BeginChangeCheck();
+            EditorGUI.showMixedValue = useLocalization.hasMultipleDifferentValues;
+            bool newUseLocalization = EditorGUI.Toggle(toggleRect, GUIContent.none, useLocalization.boolValue);
+            if (EditorGUI.EndChangeCheck())
+            {
+                useLocalization.boolValue = newUseLocalization;
+            }
+            EditorGUI.showMixedValue = false;
 
-            if (useLocalization.boolValue)
+            if (useLocalization.hasMultipleDifferentValues)
+            {
+                Rect valueRect = new Rect(
+                    position.x,
+                    position.y,
+                    toggleRect.x - position.x - spacing,
+                    position.height
+                );
+                EditorGUI.showMixedValue = true;
+                EditorGUI.TextField(valueRect, "");
+                EditorGUI.showMixedValue = false;
+            }
+            else if (useLocalization.boolValue)
             {
                 var localization = property.FindPropertyRelative("_localization");
 
@@ -46,7 +65,15 @@ namespace Moths.Collections
 
                 var text = property.FindPropertyRelative("_text");
                 valueRect.height = GetTextAreaHeight(text.stringValue);
-                text.stringValue = EditorGUI.TextArea(valueRect, text.stringValue);
+
+                EditorGUI.BeginChangeCheck();
+                EditorGUI.showMixedValue = text.hasMultipleDifferentValues;
+                string newText = EditorGUI.TextArea(valueRect, text.stringValue);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    text.stringValue = newText;
+                }
+                EditorGUI.showMixedValue = false;
 
                 if (GUI.Button(buttonRect, new GUIContent("...", "Edit text in a resizable window"), EditorStyles.miniButton))
                 {
@@ -62,6 +89,11 @@ namespace Moths.Collections
         {
             var useLocalization = property.FindPropertyRelative("_useLocalization");
             
+            if (useLocalization.hasMultipleDifferentValues)
+            {
+                return EditorGUIUtility.singleLineHeight;
+            }
+
             if (useLocalization.boolValue)
             {
                 return EditorGUI.GetPropertyHeight(property.FindPropertyRelative("_localization"), label, true) - 2;
@@ -117,7 +149,11 @@ namespace Moths.Collections
             // Header Section
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(prop.displayName, EditorStyles.boldLabel);
-            EditorGUILayout.LabelField($"{serializedObject.targetObject.name} > {displayName}", EditorStyles.miniLabel);
+            
+            string targetName = serializedObject.targetObjects.Length > 1 
+                ? $"{serializedObject.targetObjects.Length} Objects" 
+                : serializedObject.targetObject.name;
+            EditorGUILayout.LabelField($"{targetName} > {displayName}", EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
 
             EditorGUILayout.Space(5);
@@ -130,7 +166,9 @@ namespace Moths.Collections
             textAreaStyle.padding = new RectOffset(8, 8, 8, 8);
             
             string currentVal = prop.stringValue ?? "";
+            EditorGUI.showMixedValue = prop.hasMultipleDifferentValues;
             string newText = EditorGUILayout.TextArea(currentVal, textAreaStyle, GUILayout.ExpandHeight(true));
+            EditorGUI.showMixedValue = false;
             
             if (EditorGUI.EndChangeCheck())
             {
@@ -146,7 +184,14 @@ namespace Moths.Collections
             int lineCount = string.IsNullOrEmpty(currentVal) ? 0 : currentVal.Split('\n').Length;
 
             EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-            EditorGUILayout.LabelField($"Length: {charCount} | Words: {wordCount} | Lines: {lineCount}", EditorStyles.miniLabel);
+            if (prop.hasMultipleDifferentValues)
+            {
+                EditorGUILayout.LabelField("Mixed values", EditorStyles.miniLabel);
+            }
+            else
+            {
+                EditorGUILayout.LabelField($"Length: {charCount} | Words: {wordCount} | Lines: {lineCount}", EditorStyles.miniLabel);
+            }
             
             GUILayout.FlexibleSpace();
             
