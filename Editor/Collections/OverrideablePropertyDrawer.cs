@@ -22,7 +22,9 @@ namespace Moths.Collections
             EditorGUI.PropertyField(valueRect, isOverriden.boolValue ? @override : value, new GUIContent(label + (isOverriden.boolValue ? " (Overriden)" : "")), true);
 
             Rect toggleRect = new(position.x + position.width - ToggleWidth - 11, position.y, ToggleWidth, position.height);
+            EditorGUI.showMixedValue = isOverriden.hasMultipleDifferentValues;
             isOverriden.boolValue = EditorGUI.Toggle(toggleRect, isOverriden.boolValue);
+            EditorGUI.showMixedValue = false;
 
             EditorGUI.EndProperty();
         }
