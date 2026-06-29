@@ -1,3 +1,4 @@
+using System;
 using UnityEditor;
 using UnityEngine;
 using static Codice.CM.Common.CmCallContext;
@@ -12,18 +13,127 @@ namespace Moths.Collections
             SerializedProperty keyProp = property.FindPropertyRelative("key");
             SerializedProperty valueProp = property.FindPropertyRelative("value");
 
-            float elementHeight = Mathf.Max(
-                EditorGUI.GetPropertyHeight(keyProp),
-                EditorGUI.GetPropertyHeight(valueProp));
+            Type valueType = GetValueType();
+            bool isManaged = IsManagedObject(valueProp, valueType);
+
+            float keyHeight = EditorGUI.GetPropertyHeight(keyProp, true);
+            float valueHeight = isManaged 
+                ? EditorGUIUtility.singleLineHeight 
+                : EditorGUI.GetPropertyHeight(valueProp, true);
 
             // Split rect in half for Key and Value
             float halfWidth = position.width / 2f;
-            Rect keyRect = new Rect(position.x, position.y, halfWidth - 5, EditorGUI.GetPropertyHeight(keyProp));
-            Rect valueRect = new Rect(position.x + halfWidth + 5, position.y, halfWidth - 5, EditorGUI.GetPropertyHeight(valueProp));
+            Rect keyRect = new Rect(position.x, position.y, halfWidth - 5, keyHeight);
+            Rect valueRect = new Rect(position.x + halfWidth + 5, position.y, halfWidth - 5, valueHeight);
 
             // Draw the fields without labels
             EditorGUI.PropertyField(keyRect, keyProp, GUIContent.none, true);
-            EditorGUI.PropertyField(valueRect, valueProp, GUIContent.none, true);
+
+            if (isManaged)
+            {
+                string buttonText = $"Edit {GetValueTypeName(valueProp, valueType)}";
+                if (GUI.Button(valueRect, new GUIContent(buttonText, $"Edit this {GetValueTypeName(valueProp, valueType)} in a separate window"), EditorStyles.miniButton))
+                {
+                    SerializableDictionaryObjectEditorWindow.ShowWindow(valueProp);
+                }
+            }
+            else
+            {
+                EditorGUI.PropertyField(valueRect, valueProp, GUIContent.none, true);
+            }
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            SerializedProperty keyProp = property.FindPropertyRelative("key");
+            SerializedProperty valueProp = property.FindPropertyRelative("value");
+
+            Type valueType = GetValueType();
+            float valueHeight = IsManagedObject(valueProp, valueType) 
+                ? EditorGUIUtility.singleLineHeight 
+                : EditorGUI.GetPropertyHeight(valueProp, true);
+
+            return Mathf.Max(EditorGUI.GetPropertyHeight(keyProp, true), valueHeight);
+        }
+
+        private Type GetValueType()
+        {
+            if (fieldInfo == null) return null;
+            Type fieldType = fieldInfo.FieldType;
+            if (fieldType.IsArray)
+            {
+                fieldType = fieldType.GetElementType();
+            }
+            else if (fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(System.Collections.Generic.List<>))
+            {
+                fieldType = fieldType.GetGenericArguments()[0];
+            }
+
+            Type currentType = fieldType.DeclaringType;
+            while (currentType != null)
+            {
+                if (currentType.IsGenericType && currentType.GetGenericTypeDefinition() == typeof(SerializableDictionary<,>))
+                {
+                    return currentType.GetGenericArguments()[1];
+                }
+                currentType = currentType.BaseType;
+            }
+            return null;
+        }
+
+        private bool IsManagedObject(SerializedProperty property, Type type)
+        {
+            if (type != null)
+            {
+                if (type.IsPrimitive || type.IsEnum || type == typeof(string)) return false;
+                if (typeof(UnityEngine.Object).IsAssignableFrom(type)) return false;
+                
+                // Exclude common Unity value types
+                if (type == typeof(Vector2) || type == typeof(Vector3) || type == typeof(Vector4) ||
+                    type == typeof(Vector2Int) || type == typeof(Vector3Int) ||
+                    type == typeof(Color) || type == typeof(Rect) || type == typeof(RectInt) ||
+                    type == typeof(Bounds) || type == typeof(BoundsInt) || type == typeof(Quaternion))
+                {
+                    return false;
+                }
+                
+                return type.IsClass || type.IsValueType;
+            }
+            else
+            {
+                if (property == null) return false;
+                if (property.propertyType == SerializedPropertyType.Generic || 
+                    property.propertyType == SerializedPropertyType.ManagedReference)
+                {
+                    string typeName = property.type;
+                    if (typeName == "Vector2" || typeName == "Vector3" || typeName == "Vector4" ||
+                        typeName == "Vector2Int" || typeName == "Vector3Int" ||
+                        typeName == "Color" || typeName == "Rect" || typeName == "RectInt" ||
+                        typeName == "Bounds" || typeName == "BoundsInt" || typeName == "Quaternion")
+                    {
+                        return false;
+                    }
+                    return property.hasChildren;
+                }
+                return false;
+            }
+        }
+
+        private string GetValueTypeName(SerializedProperty property, Type type)
+        {
+            if (type != null) return type.Name;
+            if (property == null) return "Object";
+            string typeName = property.type;
+            if (typeName.StartsWith("ManagedReference<") && typeName.EndsWith(">"))
+            {
+                typeName = typeName.Substring("ManagedReference<".Length, typeName.Length - "ManagedReference<".Length - 1);
+                int lastDot = typeName.LastIndexOf('.');
+                if (lastDot >= 0)
+                {
+                    typeName = typeName.Substring(lastDot + 1);
+                }
+            }
+            return typeName;
         }
     }
 
@@ -75,6 +185,111 @@ namespace Moths.Collections
         {
             SerializedProperty listProperty = property.FindPropertyRelative("_pairs");
             return EditorGUI.GetPropertyHeight(listProperty);
+        }
+    }
+
+    public class SerializableDictionaryObjectEditorWindow : EditorWindow
+    {
+        private SerializedObject serializedObject;
+        private string propertyPath;
+        private string displayName;
+        private Vector2 scrollPosition;
+
+        public static void ShowWindow(SerializedProperty property)
+        {
+            var window = GetWindow<SerializableDictionaryObjectEditorWindow>(true, "Edit Object", true);
+            window.serializedObject = property.serializedObject;
+            window.propertyPath = property.propertyPath;
+            window.displayName = property.displayName;
+            window.minSize = new Vector2(400, 300);
+            window.Show();
+            window.Repaint();
+        }
+
+        private void OnGUI()
+        {
+            if (serializedObject == null || serializedObject.targetObject == null)
+            {
+                EditorGUILayout.HelpBox("No active property selected.", MessageType.Info);
+                return;
+            }
+
+            serializedObject.Update();
+            SerializedProperty prop = serializedObject.FindProperty(propertyPath);
+            if (prop == null)
+            {
+                EditorGUILayout.HelpBox("Property not found.", MessageType.Error);
+                return;
+            }
+
+            // Header Section
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            string keyPath = "";
+            if (propertyPath.EndsWith(".value"))
+            {
+                keyPath = propertyPath.Substring(0, propertyPath.Length - 6) + ".key";
+            }
+            string keyString = "";
+            if (!string.IsNullOrEmpty(keyPath))
+            {
+                SerializedProperty keyProp = serializedObject.FindProperty(keyPath);
+                if (keyProp != null)
+                {
+                    if (keyProp.propertyType == SerializedPropertyType.ObjectReference)
+                    {
+                        keyString = keyProp.objectReferenceValue != null ? keyProp.objectReferenceValue.name : "None";
+                    }
+                    else
+                    {
+                        keyString = keyProp.boxedValue?.ToString() ?? "null";
+                    }
+                }
+            }
+
+            EditorGUILayout.LabelField("Editing Dictionary Value", EditorStyles.boldLabel);
+            if (!string.IsNullOrEmpty(keyString))
+            {
+                EditorGUILayout.LabelField($"Key: {keyString}", EditorStyles.label);
+            }
+
+            string targetName = serializedObject.targetObjects.Length > 1
+                ? $"{serializedObject.targetObjects.Length} Objects"
+                : serializedObject.targetObject.name;
+            EditorGUILayout.LabelField($"{targetName} > {displayName}", EditorStyles.miniLabel);
+            EditorGUILayout.EndVertical();
+
+            EditorGUILayout.Space(5);
+
+            // Scroll View for object fields
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+
+            EditorGUI.BeginChangeCheck();
+
+            bool hasChildren = false;
+            SerializedProperty endProp = prop.GetEndProperty();
+            SerializedProperty childProp = prop.Copy();
+            if (childProp.NextVisible(true))
+            {
+                do
+                {
+                    if (SerializedProperty.EqualContents(childProp, endProp))
+                        break;
+                    hasChildren = true;
+                    EditorGUILayout.PropertyField(childProp, true);
+                } while (childProp.NextVisible(false));
+            }
+
+            if (!hasChildren)
+            {
+                EditorGUILayout.PropertyField(prop, true);
+            }
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                serializedObject.ApplyModifiedProperties();
+            }
+
+            EditorGUILayout.EndScrollView();
         }
     }
 }
