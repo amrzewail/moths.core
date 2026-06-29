@@ -114,18 +114,18 @@ namespace Moths.Collections
             foreach (var pair in _dictionary) _pairs.Add(new() { key = pair.Key, value = pair.Value });
         }
 
-        private void SyncDictionaryWithPairs()
+        public void SyncDictionaryWithPairs(bool forceSync = false)
         {
-            if (Application.isPlaying)
+            if (Application.isPlaying && !forceSync)
             {
                 if (SerializableDictionary.DidInitialize.Contains(this)) return;
 
                 SerializableDictionary.DidInitialize.Add(this);
             }
 
-        SYNC:
-
             if (_pairs == null) _pairs = new();
+
+            if (forceSync) _dictionary.Clear();
 
             foreach (var pair in _pairs) _dictionary[pair.key] = pair.value;
         }
