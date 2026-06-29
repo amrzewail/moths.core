@@ -31,8 +31,8 @@ namespace Moths.Collections
 
             if (isManaged)
             {
-                string buttonText = $"Edit {GetValueTypeName(valueProp, valueType)}";
-                if (GUI.Button(valueRect, new GUIContent(buttonText, $"Edit this {GetValueTypeName(valueProp, valueType)} in a separate window"), EditorStyles.miniButton))
+                string buttonText = $"Edit {valueProp.type}";
+                if (GUI.Button(valueRect, new GUIContent(buttonText, $"Edit this {valueProp.type} in a separate window"), EditorStyles.miniButton))
                 {
                     SerializableDictionaryObjectEditorWindow.ShowWindow(valueProp);
                 }
@@ -83,57 +83,21 @@ namespace Moths.Collections
 
         private bool IsManagedObject(SerializedProperty property, Type type)
         {
-            if (type != null)
+            if (property == null) return false;
+            if (property.propertyType == SerializedPropertyType.Generic ||
+                property.propertyType == SerializedPropertyType.ManagedReference)
             {
-                if (type.IsPrimitive || type.IsEnum || type == typeof(string)) return false;
-                if (typeof(UnityEngine.Object).IsAssignableFrom(type)) return false;
-                
-                // Exclude common Unity value types
-                if (type == typeof(Vector2) || type == typeof(Vector3) || type == typeof(Vector4) ||
-                    type == typeof(Vector2Int) || type == typeof(Vector3Int) ||
-                    type == typeof(Color) || type == typeof(Rect) || type == typeof(RectInt) ||
-                    type == typeof(Bounds) || type == typeof(BoundsInt) || type == typeof(Quaternion))
+                string typeName = property.type;
+                if (typeName == "Vector2" || typeName == "Vector3" || typeName == "Vector4" ||
+                    typeName == "Vector2Int" || typeName == "Vector3Int" ||
+                    typeName == "Color" || typeName == "Rect" || typeName == "RectInt" ||
+                    typeName == "Bounds" || typeName == "BoundsInt" || typeName == "Quaternion")
                 {
                     return false;
                 }
-                
-                return type.IsClass || type.IsValueType;
+                return property.hasChildren;
             }
-            else
-            {
-                if (property == null) return false;
-                if (property.propertyType == SerializedPropertyType.Generic || 
-                    property.propertyType == SerializedPropertyType.ManagedReference)
-                {
-                    string typeName = property.type;
-                    if (typeName == "Vector2" || typeName == "Vector3" || typeName == "Vector4" ||
-                        typeName == "Vector2Int" || typeName == "Vector3Int" ||
-                        typeName == "Color" || typeName == "Rect" || typeName == "RectInt" ||
-                        typeName == "Bounds" || typeName == "BoundsInt" || typeName == "Quaternion")
-                    {
-                        return false;
-                    }
-                    return property.hasChildren;
-                }
-                return false;
-            }
-        }
-
-        private string GetValueTypeName(SerializedProperty property, Type type)
-        {
-            if (type != null) return type.Name;
-            if (property == null) return "Object";
-            string typeName = property.type;
-            if (typeName.StartsWith("ManagedReference<") && typeName.EndsWith(">"))
-            {
-                typeName = typeName.Substring("ManagedReference<".Length, typeName.Length - "ManagedReference<".Length - 1);
-                int lastDot = typeName.LastIndexOf('.');
-                if (lastDot >= 0)
-                {
-                    typeName = typeName.Substring(lastDot + 1);
-                }
-            }
-            return typeName;
+            return false;
         }
     }
 
